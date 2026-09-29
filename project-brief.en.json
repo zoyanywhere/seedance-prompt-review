@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "updated_at": "2026-09-29",
   "status": "Architecture approved for initial implementation; video concept to follow",
   "project": {
@@ -60,6 +60,32 @@
     "media_storage": "Docker server initially; deletion and configurable retention",
     "secrets": "API keys server-side only; never commit .env or expose keys to browser clients"
   },
+  "security_and_maintenance": {
+    "priority": "Security is a release gate for the invitation-only service and its sensitive media",
+    "containers": [
+      "Multi-stage builds with minimal runtime images and pinned base image versions",
+      "Run every application process as a dedicated non-root UID/GID",
+      "Read-only root filesystem where practical; explicit writable mounts only for required data and temporary files",
+      "Drop Linux capabilities, set no-new-privileges, retain Docker's default seccomp profile, and avoid privileged mode and host networking",
+      "Never mount the Docker socket into application containers",
+      "Health checks, resource limits, restart policy, and graceful shutdown",
+      "Database and worker ports remain internal; expose only the reverse proxy over TLS"
+    ],
+    "application": [
+      "Invitation-only account creation, secure sessions, role-based project access, and server-side authorization checks",
+      "CSRF protection where cookie sessions are used, rate limits for login/invites/uploads/reviews, and audit events",
+      "Strict media type and size validation, isolated processing, safe filenames, and no public media URLs by default",
+      "API keys and session secrets injected at runtime, never baked into images, logged, or returned to browsers",
+      "Per-review cost and concurrency ceilings to limit accidental API spend"
+    ],
+    "updates": {
+      "dependency_bot": "Weekly Dependabot pull requests for Python, Node, Docker base images, and GitHub Actions",
+      "ci_gates": "Dependency audit, container vulnerability scan, secret scan, lint, tests, and build before merge",
+      "deployment_policy": "Build reviewed updates into new immutable images and redeploy with rollback; do not silently upgrade containers on startup",
+      "urgent_fixes": "Prioritize critical security advisories and document upgrade ownership"
+    },
+    "verification": "Dockerfiles, Compose security settings, access control, and restore/upgrade path must be checked before public deployment"
+  },
   "seedance_rules": {
     "source_priority": "Official BytePlus API and Seedance 2.5 prompt guide and official skill before community templates",
     "prompt_language": "English final prompt by default; German creator UI allowed",
@@ -76,5 +102,5 @@
     "visible_ids": ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra", "claude-sonnet-5-5", "claude-opus-5-5", "gemini-3.8-flash"],
     "limitation": "Listing visibility does not prove successful inference or sufficient quota"
   },
-  "open_items": ["Creator video concept after Ask YT discussion", "Hosting domain", "Media retention period", "Default review budget after initial measurements", "Live API inference and rate-limit checks during implementation"]
+  "open_items": ["Creator video concept after Ask YT discussion", "Production domain and server environment", "Invitation email delivery provider or manual invite links", "Visual style and generation model for storyboard preview images", "Media retention period", "Default review budget after initial measurements", "Live API inference and rate-limit checks during implementation"]
 }

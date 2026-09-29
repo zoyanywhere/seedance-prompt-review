@@ -36,3 +36,9 @@ The active task type determines valid settings. Text-to-video and reference-to-v
 ## Secrets and public repository
 
 Never commit `.env`, API keys, uploaded media, or user prompts. Use `.env.example` for variable names only. The application must load keys on the server and keep all review and media data behind authentication.
+
+## Container security and upgrades
+
+The implementation will use multi-stage Docker builds and minimal, version-pinned runtime images. Application containers run as dedicated non-root users with a read-only root filesystem where practical, explicit writable volumes, dropped Linux capabilities, `no-new-privileges`, health checks, and resource limits. The database and workers stay on an internal network; only a TLS reverse proxy is exposed. Containers will not receive the Docker socket or privileged mode.
+
+Dependencies and base images will receive weekly Dependabot update PRs. CI will check builds, tests, dependency advisories, container vulnerabilities, and accidental secrets. Production upgrades will use reviewed immutable images with a rollback path; application containers will not silently self-update at startup. See the [project brief](project-brief.en.json) for the full security and maintenance requirements.
