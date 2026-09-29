@@ -49,6 +49,7 @@ class ModelResult:
     output_tokens: int = 0
     cached_tokens: int = 0
     reasoning_tokens: int = 0
+    attempts: int = 1
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int, cached_tokens: int = 0) -> float | None:
@@ -86,10 +87,25 @@ def _read_media(media: Media) -> bytes:
 
 
 def call_model(phase: str, prompt: str, media: list[Media] | None = None, *, max_output_tokens: int = 2200) -> ModelResult:
+    for attempt in range(1, 4):
+        try:
+            result = _call_model_once(phase, prompt, media, max_output_tokens=max_output_tokens)
+            result.attempts = attempt
+            return result
+        except Exception as exc:
+            status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+            transient = status in {408, 429, 500, 502, 503, 504} or isinstance(exc, (TimeoutError, ConnectionError))
+            if not transient or attempt == 3:
+                raise
+            time.sleep(attempt * 2)
+    raise RuntimeError("Model retry loop exhausted")
+
+
+def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, *, max_output_tokens: int = 2200) -> ModelResult:
     model = MODEL_IDS[phase]
     media = media or []
     if model.startswith("gpt-"):
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=90, max_retries=1)
+        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=90, max_retries=0)
         content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
         for item in _image_media(media):
             data = base64.b64encode(_read_media(item)).decode("ascii")
@@ -106,7 +122,7 @@ def call_model(phase: str, prompt: str, media: list[Media] | None = None, *, max
             getattr(out_details, "reasoning_tokens", 0) or 0,
         )
     if model.startswith("claude-"):
-        client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=90, max_retries=1)
+        client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=90, max_retries=0)
         content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         for item in _image_media(media):
             data = base64.b64encode(_read_media(item)).decode("ascii")

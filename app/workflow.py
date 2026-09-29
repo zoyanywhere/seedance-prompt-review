@@ -64,6 +64,7 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
         usage.output_tokens = result.output_tokens
         usage.cached_tokens = result.cached_tokens
         usage.reasoning_tokens = result.reasoning_tokens
+        usage.attempts = result.attempts
         usage.estimated_cost_usd = estimate_cost(model, result.input_tokens, result.output_tokens, result.cached_tokens)
         usage.status = "completed"
         db.commit()
