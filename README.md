@@ -25,6 +25,8 @@ Creator instructions and uploaded references have priority over generated storyb
 
 The application follows the current [Zoyanywhere website](https://zoyanywhere.com/) visual language: charcoal `#161616`, vivid orange `#FB4E04`, warm cream `#FFF7F2`, white, Anton display headings, and Inter body text. Design tokens stay configurable, and contrast and focus states must remain accessible. The interface should feel like a modern creator workspace: generous spacing, clear hierarchy, calm surfaces, restrained motion, and focused orange accents. Review status, critical findings, and cost remain easy to scan; advanced detail appears when needed.
 
+Selective 3D depth is part of the visual direction: a spatial dashboard illustration, subtle perspective on storyboard shot cards, and an optional interactive view when it helps explain framing or camera motion. Forms, findings, costs, and approvals stay flat and readable. Heavy scenes load on demand, reduced-motion preferences are respected, and a static 2D fallback keeps the full workflow usable on phones and low-power devices.
+
 The complete workflow must work on desktop and mobile. On phones, brief entry, reference uploads, storyboard shots, preview approval, agent findings, cost dashboard, and final approval use a single-column layout without horizontal page overflow. Desktop uses its wider space for shot timelines and side-by-side reference and preview comparison. Verify 360, 390, 768, and 1280 CSS-pixel widths and touch targets of at least 44 × 44 CSS pixels.
 
 ## Planned technology

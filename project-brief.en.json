@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "updated_at": "2026-09-29",
   "status": "Architecture approved for initial implementation; video concept to follow",
   "project": {
@@ -275,6 +275,23 @@
       "Make critical blockers and budget warnings prominent without relying on color alone",
       "Use concise progressive disclosure for advanced settings and detailed agent reasoning",
       "Respect reduced-motion preferences and maintain keyboard and screen-reader access"
-    ]
+    ],
+    "three_dimensional_design": {
+      "included": true,
+      "direction": "Selective 3D depth within the Zoyanywhere visual style, using charcoal, orange, and warm cream",
+      "placements": [
+        "Optional spatial illustration or layered hero on the signed-in dashboard",
+        "Depth and subtle perspective for storyboard shot cards and workflow transitions",
+        "Optional interactive 3D view only where it clarifies shot framing or camera movement"
+      ],
+      "constraints": [
+        "Critical review text, costs, forms, and approval controls remain flat, readable, and accessible",
+        "No 3D effect may block the review or approval workflow",
+        "Use lightweight assets and lazy-load heavier scenes",
+        "Provide a static 2D fallback for mobile, low-power devices, unsupported browsers, and reduced-motion preferences",
+        "Respect reduced-motion settings and avoid continuous animation by default"
+      ],
+      "acceptance": "Desktop and mobile core workflows remain usable with 3D disabled"
+    }
   }
 }
