@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "updated_at": "2026-09-29",
   "status": "Architecture approved for initial implementation; video concept to follow",
   "project": {
@@ -267,6 +267,14 @@
       "touch_and_accessibility": "Touch targets at least 44 by 44 CSS pixels, keyboard access, visible focus, readable text, sufficient contrast, and accessible status updates.",
       "workflow_parity": "Creators can upload references, inspect and approve previews, review findings, and approve the final prompt on phone and desktop.",
       "verification": "Check representative phone, tablet, and desktop widths in the browser before release; include layout and core workflow tests."
-    }
+    },
+    "design_direction": "Modern, polished creator workspace aligned with Zoyanywhere: generous spacing, clear type hierarchy, restrained motion, calm surfaces, strong contrast, and focused orange accents. Show the current step, review status, unresolved findings, and cost without crowding the screen.",
+    "interaction_requirements": [
+      "Keep brief, storyboard, specialist findings, supervisor decision, and approval easy to scan",
+      "Distinguish source references from AI-generated previews and show provenance",
+      "Make critical blockers and budget warnings prominent without relying on color alone",
+      "Use concise progressive disclosure for advanced settings and detailed agent reasoning",
+      "Respect reduced-motion preferences and maintain keyboard and screen-reader access"
+    ]
   }
 }
