@@ -1,7 +1,27 @@
 {
-  "schema_version": "1.6",
+  "schema_version": "1.7",
   "updated_at": "2026-09-29",
-  "status": "Architecture approved for initial implementation; video concept to follow",
+  "status": "First working application version implemented; video concept and server deployment to follow",
+  "implementation": {
+    "implemented": [
+      "Responsive branded web interface with lightweight 3D accents",
+      "Admin-created one-time invitation links, account login, server-side sessions, CSRF protection",
+      "Creator projects with brief, output settings, and private image/video/audio references",
+      "Storyboard drafting, creator editing and approval, optional AI preview images with separate approval",
+      "LangGraph prompt review with specialists, Opus challenge, Sol supervisor, Astra escalation, deterministic linter",
+      "Per-call token and estimated cost ledger with round and full-run totals",
+      "Docker Compose application and PostgreSQL with non-root application process and restricted networking",
+      "Automated tests and dependency, container, and basic secret checks in CI"
+    ],
+    "pending_before_public_deployment": [
+      "Production TLS reverse proxy, domain, backup and restore plan",
+      "Database migrations and durable background workers",
+      "Media deletion and configurable retention",
+      "Live provider inference and image quality checks with the configured API accounts",
+      "Load and security testing with realistic media, users, and budgets"
+    ],
+    "later_product_scope": ["BytePlus video generation", "Creator video concept after Ask YT discussion", "Optional project sharing"]
+  },
   "project": {
     "name": "Seedance Prompt Review Pipeline",
     "brand": "Zoyanywhere",
@@ -179,7 +199,7 @@
   "accounts_and_storage": {
     "invites": "Admins generate one-time, expiring invitation links and send them manually; no outbound email provider is required in the first release",
     "project_visibility": "Own projects and explicitly shared projects only",
-    "media_storage": "Docker server initially; deletion and configurable retention",
+    "media_storage": "Private Docker volume initially; deletion and configurable retention remain pending before public deployment",
     "secrets": "API keys server-side only; never commit .env or expose keys to browser clients"
   },
   "security_and_maintenance": {

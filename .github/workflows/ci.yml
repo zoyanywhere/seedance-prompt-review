@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q app
+      - run: python -m pytest -q
+      - run: python scripts/check_secrets.py
+      - run: pip-audit -r requirements.txt
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --pull --tag seedance-review:test .
+      - run: |
+          docker image inspect seedance-review:test --format '{{.Config.User}}' | grep -x '10001:10001'
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: seedance-review:test
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
