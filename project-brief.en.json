@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "updated_at": "2026-09-29",
   "status": "Architecture approved for initial implementation; video concept to follow",
   "project": {
@@ -14,46 +14,165 @@
   },
   "creator_inputs": {
     "brief_and_must_haves": true,
-    "optional_reference_media": ["images", "videos", "audio"],
+    "optional_reference_media": [
+      "images",
+      "videos",
+      "audio"
+    ],
     "target_duration_seconds": "4-30 or automatic where task type allows",
-    "resolution_options": ["480p", "720p", "1080p"],
-    "aspect_ratio_options_for_text_and_reference_generation": ["16:9", "9:16", "4:3", "3:4", "1:1", "21:9"],
+    "resolution_options": [
+      "480p",
+      "720p",
+      "1080p"
+    ],
+    "aspect_ratio_options_for_text_and_reference_generation": [
+      "16:9",
+      "9:16",
+      "4:3",
+      "3:4",
+      "1:1",
+      "21:9"
+    ],
     "task_type_constraint": "Seedance 2.5 edit, extend, first-frame, and first-last-frame tasks require adaptive ratio; editing requires automatic duration",
     "video_concept": null
   },
   "storyboard": {
     "source": "human creator brief and approved reference media",
-    "format": "editable shot list with visual preview image per shot",
-    "preview_policy": "Generate visual previews from each shot and approved creator references where appropriate; creators can replace or reject a preview. Previews illustrate planned composition but are not automatically sent to Seedance as reference assets.",
-    "authority_order": ["human creator brief and explicit must-haves", "creator-provided reference media and roles", "creator-approved storyboard text", "creator-approved visual previews", "agent suggestions"],
+    "format": "Editable shot list with a visual scene card per shot and optional AI-generated preview images",
+    "preview_policy": "Build a scene card from creator-provided references and shot text by default. After the shot list is drafted, creators may generate AI preview images for selected shots or all shots after seeing an estimated cost. Gemini 3.1 Flash Image is a candidate, subject to API access and cost verification. Every generated preview records its source model, inputs, version, and cost. Creators approve, replace, or reject previews before agents use them. Generated previews interpret the brief and never override creator instructions or uploaded references; they are not automatically passed to Seedance as reference assets.",
+    "authority_order": [
+      "human creator brief and explicit must-haves",
+      "creator-provided reference media and roles",
+      "creator-approved storyboard text",
+      "creator-approved visual previews",
+      "agent suggestions"
+    ],
     "agent_use": "Visual and continuity reviewers may inspect approved previews alongside source references to catch framing, identity, prop, and transition conflicts; they must cite which source controls a disputed detail.",
-    "fields_per_shot": ["shot_id", "time_window", "visible_action", "characters_and_objects", "camera", "lighting_and_style", "audio_or_dialogue", "start_state", "end_state", "must_haves", "reference_media_ids"],
+    "fields_per_shot": [
+      "shot_id",
+      "time_window",
+      "visible_action",
+      "characters_and_objects",
+      "camera",
+      "lighting_and_style",
+      "audio_or_dialogue",
+      "start_state",
+      "end_state",
+      "must_haves",
+      "reference_media_ids"
+    ],
     "approval": "human creators approve a version before prompt review",
-    "change_control": "agents may propose changes but cannot silently alter an approved version"
+    "change_control": "agents may propose changes but cannot silently alter an approved version",
+    "preview_generation": {
+      "default": "Reference-based scene cards; no automatic image-model call",
+      "options": [
+        "Generate selected shot previews",
+        "Generate all shot previews after cost estimate"
+      ],
+      "candidate_model": "gemini-3.1-flash-image",
+      "model_status": "Candidate only; verify key access, pricing, and quality during implementation",
+      "approval": "Creator approval required before generated previews influence prompt review"
+    }
   },
   "agents": [
-    { "id": "brief_intake", "model": "gpt-6-luna", "task": "Structure human creator input; mark missing or conflicting requirements without inventing decisions" },
-    { "id": "storyboard", "model": "gpt-6-sol", "task": "Draft shot-by-shot storyboard and preview directions" },
-    { "id": "prompt_draft", "model": "gpt-6-sol", "task": "Create a Seedance prompt bound to the approved storyboard and media roles" },
-    { "id": "action_timing", "model": "gpt-6-sol", "task": "Independently review shot order, visible actions, timing, and end states" },
-    { "id": "camera_visuals", "model": "gemini-3.8-flash", "task": "Independently review visual references, framing, camera, lighting, and style" },
-    { "id": "audio_dialogue", "model": "gemini-3.8-flash", "task": "Independently review audio references, speech, music, and time alignment" },
-    { "id": "continuity", "model": "claude-sonnet-5-5", "task": "Independently review identity, objects, spatial continuity, and media bindings", "effort_start": "high", "output": "schema-validated findings" },
-    { "id": "challenge_review", "model": "claude-opus-5-5", "position": "independent review after specialists and before supervisor", "task": "Challenge all approved inputs and specialist findings for cross-modal conflicts and blind spots", "effort_start": "medium" },
-    { "id": "supervisor", "model": "gpt-6-sol", "task": "Resolve findings, request targeted rechecks, revise the prompt, and document risks" },
-    { "id": "critical_escalation", "model": "gpt-6-astra", "trigger": "Unresolved critical conflict or creator-requested final check for an especially costly generation" },
-    { "id": "media_validator", "model": null, "task": "Deterministic media metadata and BytePlus constraint validation" },
-    { "id": "seedance_linter", "model": null, "task": "Deterministic prompt structure and timing checks" }
+    {
+      "id": "brief_intake",
+      "model": "gpt-6-luna",
+      "task": "Structure human creator input; mark missing or conflicting requirements without inventing decisions"
+    },
+    {
+      "id": "storyboard",
+      "model": "gpt-6-sol",
+      "task": "Draft shot-by-shot storyboard and preview directions"
+    },
+    {
+      "id": "prompt_draft",
+      "model": "gpt-6-sol",
+      "task": "Create a Seedance prompt bound to the approved storyboard and media roles"
+    },
+    {
+      "id": "action_timing",
+      "model": "gpt-6-sol",
+      "task": "Independently review shot order, visible actions, timing, and end states"
+    },
+    {
+      "id": "camera_visuals",
+      "model": "gemini-3.8-flash",
+      "task": "Independently review visual references, framing, camera, lighting, and style"
+    },
+    {
+      "id": "audio_dialogue",
+      "model": "gemini-3.8-flash",
+      "task": "Independently review audio references, speech, music, and time alignment"
+    },
+    {
+      "id": "continuity",
+      "model": "claude-sonnet-5-5",
+      "task": "Independently review identity, objects, spatial continuity, and media bindings",
+      "effort_start": "high",
+      "output": "schema-validated findings"
+    },
+    {
+      "id": "challenge_review",
+      "model": "claude-opus-5-5",
+      "position": "independent review after specialists and before supervisor",
+      "task": "Challenge all approved inputs and specialist findings for cross-modal conflicts and blind spots",
+      "effort_start": "medium"
+    },
+    {
+      "id": "supervisor",
+      "model": "gpt-6-sol",
+      "task": "Resolve findings, request targeted rechecks, revise the prompt, and document risks"
+    },
+    {
+      "id": "critical_escalation",
+      "model": "gpt-6-astra",
+      "trigger": "Unresolved critical conflict or creator-requested final check for an especially costly generation"
+    },
+    {
+      "id": "media_validator",
+      "model": null,
+      "task": "Deterministic media metadata and BytePlus constraint validation"
+    },
+    {
+      "id": "seedance_linter",
+      "model": null,
+      "task": "Deterministic prompt structure and timing checks"
+    }
   ],
   "approval_gate": {
-    "required": ["creator-approved storyboard", "valid media and explicit media roles", "valid task-specific output settings", "no unresolved critical finding", "no hard linter error", "creator approval of final prompt"],
+    "required": [
+      "creator-approved storyboard",
+      "valid media and explicit media roles",
+      "valid task-specific output settings",
+      "no unresolved critical finding",
+      "no hard linter error",
+      "creator approval of final prompt"
+    ],
     "limits": "Hard maximum review rounds, timeout, and cost ceiling; unresolved work is reported rather than treated as success",
     "quality_claim": "Review cannot guarantee generated video quality"
   },
   "usage_dashboard": {
     "initial_release": true,
-    "levels": ["API call", "agent", "round", "complete review", "project", "user"],
-    "metrics": ["input_tokens", "output_tokens", "cached_tokens_where_available", "thinking_tokens_where_available", "media_modalities_where_available", "estimated_cost_usd", "remaining_budget"],
+    "levels": [
+      "API call",
+      "agent",
+      "round",
+      "complete review",
+      "project",
+      "user"
+    ],
+    "metrics": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens_where_available",
+      "thinking_tokens_where_available",
+      "media_modalities_where_available",
+      "estimated_cost_usd",
+      "remaining_budget",
+      "generated_preview_count",
+      "estimated_image_generation_cost_usd"
+    ],
     "method": "Capture provider-reported usage for every call and calculate estimates using versioned provider/model rates; count retries and failed calls separately",
     "default_budget": "To be set after observing initial real reviews"
   },
@@ -102,8 +221,22 @@
   "model_access": {
     "checked_at": "2026-09-29",
     "method": "Read-only model listing with local API keys",
-    "visible_ids": ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra", "claude-sonnet-5-5", "claude-opus-5-5", "gemini-3.8-flash"],
+    "visible_ids": [
+      "gpt-6-luna",
+      "gpt-6-sol",
+      "gpt-6-astra",
+      "claude-sonnet-5-5",
+      "claude-opus-5-5",
+      "gemini-3.8-flash"
+    ],
     "limitation": "Listing visibility does not prove successful inference or sufficient quota"
   },
-  "open_items": ["Creator video concept after Ask YT discussion", "Production domain and server environment to be decided separately", "Visual style and generation model for storyboard preview images", "Media retention period", "Default review budget after initial measurements", "Live API inference and rate-limit checks during implementation"]
+  "open_items": [
+    "Creator video concept after Ask YT discussion",
+    "Production domain and server environment to be decided separately",
+    "Preview image style and image-model access, pricing, and quality",
+    "Media retention period",
+    "Default review budget after initial measurements",
+    "Live API inference and rate-limit checks during implementation"
+  ]
 }
