@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "updated_at": "2026-09-29",
   "status": "Architecture approved for initial implementation; video concept to follow",
   "project": {
@@ -238,5 +238,35 @@
     "Media retention period",
     "Default review budget after initial measurements",
     "Live API inference and rate-limit checks during implementation"
-  ]
+  ],
+  "interface_design": {
+    "source": "https://zoyanywhere.com/ as inspected on 2026-09-29; keep tokens configurable if the site changes",
+    "brand_colors": {
+      "ink": "#161616",
+      "orange": "#FB4E04",
+      "warm_background": "#FFF7F2",
+      "white": "#FFFFFF",
+      "orange_ink": "#C63C00"
+    },
+    "typography": {
+      "display": "Anton",
+      "body": "Inter",
+      "fallbacks": "system sans-serif"
+    },
+    "style": "Use the existing Zoyanywhere visual language for the application, with accessible contrast and clear focus states.",
+    "responsive": {
+      "required": true,
+      "target_viewports_px": [
+        360,
+        390,
+        768,
+        1280
+      ],
+      "mobile_layout": "Single-column brief, media, storyboard, reviews, and cost views; no horizontal page overflow. Shot details and agent findings open as stacked panels or tabs.",
+      "desktop_layout": "Use wider space for a shot timeline, side-by-side reference and preview comparison, agent findings, and cost overview.",
+      "touch_and_accessibility": "Touch targets at least 44 by 44 CSS pixels, keyboard access, visible focus, readable text, sufficient contrast, and accessible status updates.",
+      "workflow_parity": "Creators can upload references, inspect and approve previews, review findings, and approve the final prompt on phone and desktop.",
+      "verification": "Check representative phone, tablet, and desktop widths in the browser before release; include layout and core workflow tests."
+    }
+  }
 }
