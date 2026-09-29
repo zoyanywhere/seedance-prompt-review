@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-09-29",
+  "status": "Architecture approved for initial implementation; video concept to follow",
+  "project": {
+    "name": "Seedance Prompt Review Pipeline",
+    "brand": "Zoyanywhere",
+    "website": "https://zoyanywhere.com/",
+    "repository_visibility": "public",
+    "application_access": "invitation-only user accounts",
+    "deployment": "Docker on a server",
+    "generation_provider_later": "BytePlus Seedance 2.5 API",
+    "generation_in_initial_release": false
+  },
+  "creator_inputs": {
+    "brief_and_must_haves": true,
+    "optional_reference_media": ["images", "videos", "audio"],
+    "target_duration_seconds": "4-30 or automatic where task type allows",
+    "resolution_options": ["480p", "720p", "1080p"],
+    "aspect_ratio_options_for_text_and_reference_generation": ["16:9", "9:16", "4:3", "3:4", "1:1", "21:9"],
+    "task_type_constraint": "Seedance 2.5 edit, extend, first-frame, and first-last-frame tasks require adaptive ratio; editing requires automatic duration",
+    "video_concept": null
+  },
+  "storyboard": {
+    "source": "human creator brief and approved reference media",
+    "format": "editable shot list with visual preview image per shot",
+    "fields_per_shot": ["shot_id", "time_window", "visible_action", "characters_and_objects", "camera", "lighting_and_style", "audio_or_dialogue", "start_state", "end_state", "must_haves", "reference_media_ids"],
+    "approval": "human creators approve a version before prompt review",
+    "change_control": "agents may propose changes but cannot silently alter an approved version"
+  },
+  "agents": [
+    { "id": "brief_intake", "model": "gpt-6-luna", "task": "Structure human creator input; mark missing or conflicting requirements without inventing decisions" },
+    { "id": "storyboard", "model": "gpt-6-sol", "task": "Draft shot-by-shot storyboard and preview directions" },
+    { "id": "prompt_draft", "model": "gpt-6-sol", "task": "Create a Seedance prompt bound to the approved storyboard and media roles" },
+    { "id": "action_timing", "model": "gpt-6-sol", "task": "Independently review shot order, visible actions, timing, and end states" },
+    { "id": "camera_visuals", "model": "gemini-3.8-flash", "task": "Independently review visual references, framing, camera, lighting, and style" },
+    { "id": "audio_dialogue", "model": "gemini-3.8-flash", "task": "Independently review audio references, speech, music, and time alignment" },
+    { "id": "continuity", "model": "claude-sonnet-5-5", "task": "Independently review identity, objects, spatial continuity, and media bindings", "effort_start": "high", "output": "schema-validated findings" },
+    { "id": "challenge_review", "model": "claude-opus-5-5", "position": "independent review after specialists and before supervisor", "task": "Challenge all approved inputs and specialist findings for cross-modal conflicts and blind spots", "effort_start": "medium" },
+    { "id": "supervisor", "model": "gpt-6-sol", "task": "Resolve findings, request targeted rechecks, revise the prompt, and document risks" },
+    { "id": "critical_escalation", "model": "gpt-6-astra", "trigger": "Unresolved critical conflict or creator-requested final check for an especially costly generation" },
+    { "id": "media_validator", "model": null, "task": "Deterministic media metadata and BytePlus constraint validation" },
+    { "id": "seedance_linter", "model": null, "task": "Deterministic prompt structure and timing checks" }
+  ],
+  "approval_gate": {
+    "required": ["creator-approved storyboard", "valid media and explicit media roles", "valid task-specific output settings", "no unresolved critical finding", "no hard linter error", "creator approval of final prompt"],
+    "limits": "Hard maximum review rounds, timeout, and cost ceiling; unresolved work is reported rather than treated as success",
+    "quality_claim": "Review cannot guarantee generated video quality"
+  },
+  "usage_dashboard": {
+    "initial_release": true,
+    "levels": ["API call", "agent", "round", "complete review", "project", "user"],
+    "metrics": ["input_tokens", "output_tokens", "cached_tokens_where_available", "thinking_tokens_where_available", "media_modalities_where_available", "estimated_cost_usd", "remaining_budget"],
+    "method": "Capture provider-reported usage for every call and calculate estimates using versioned provider/model rates; count retries and failed calls separately",
+    "default_budget": "To be set after observing initial real reviews"
+  },
+  "accounts_and_storage": {
+    "invites": "Admins invite users",
+    "project_visibility": "Own projects and explicitly shared projects only",
+    "media_storage": "Docker server initially; deletion and configurable retention",
+    "secrets": "API keys server-side only; never commit .env or expose keys to browser clients"
+  },
+  "seedance_rules": {
+    "source_priority": "Official BytePlus API and Seedance 2.5 prompt guide and official skill before community templates",
+    "prompt_language": "English final prompt by default; German creator UI allowed",
+    "prompt_length_guidance": "BytePlus recommends no more than 1000 English words; keep it concise",
+    "prompt_structure": "One-sentence summary; ordered shots or continuous timeline; observable actions, camera, audio, and consistent global details",
+    "media_limits": "For 2.5 omni reference: up to 30 images, 10 videos totaling at most 30 seconds, and 10 audio clips totaling at most 30 seconds; validate per-file constraints by task type",
+    "reference_contract": "Give each asset a stable ID, upload order, purpose, authority, affected shots, and exclusions",
+    "official_api": "https://docs.byteplus.com/en/docs/modelark/create-video-generation-task-api",
+    "official_prompt_guide": "https://docs.byteplus.com/en/docs/modelark/seedance-2-5-prompt-guide"
+  },
+  "model_access": {
+    "checked_at": "2026-09-29",
+    "method": "Read-only model listing with local API keys",
+    "visible_ids": ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra", "claude-sonnet-5-5", "claude-opus-5-5", "gemini-3.8-flash"],
+    "limitation": "Listing visibility does not prove successful inference or sufficient quota"
+  },
+  "open_items": ["Creator video concept after Ask YT discussion", "Hosting domain", "Media retention period", "Default review budget after initial measurements", "Live API inference and rate-limit checks during implementation"]
+}

@@ -1,0 +1,23 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# User data and local runtime state
+data/
+uploads/
+storage/
+*.db
+*.sqlite*
+
+# Local drafts retained outside the English public repository
+project-brief.json
+agent-architecture.svg
+
+# Tooling
+.venv/
+__pycache__/
+.pytest_cache/
+node_modules/
+.next/
+dist/
