@@ -9,7 +9,7 @@ An invitation-only web application for reviewing Seedance 2.5 prompts **before**
 ## Workflow
 
 1. Human creators provide the brief, must-have requirements, optional image/video/audio references, target duration, resolution, and aspect ratio.
-2. A deterministic validator checks media and task-specific BytePlus constraints. GPT-6 Luna structures the creator brief; GPT-6 Sol drafts a shot-by-shot storyboard with visual previews.
+2. A deterministic validator checks media and task-specific BytePlus constraints. GPT-6 Luna structures the creator brief; GPT-6 Sol drafts a shot-by-shot storyboard with visual previews. Creators can replace or reject preview images.
 3. Creators edit and approve the storyboard, media roles, and output settings.
 4. GPT-6 Sol drafts a prompt bound to that approved storyboard version.
 5. Four independent specialist reviews examine action/timing, camera/visuals, audio/dialogue, and continuity.
@@ -19,11 +19,13 @@ An invitation-only web application for reviewing Seedance 2.5 prompts **before**
 
 The review loop has a hard round limit and a cost ceiling. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
 
+Creator instructions and uploaded references have priority over generated storyboard previews. Approved previews help the visual reviewers understand intended composition and continuity; they are not automatically sent to Seedance as reference assets.
+
 ## Planned technology
 
 - LangGraph for the review state machine, persistence, and human approval gates.
 - OpenAI GPT-6 Luna, Sol, and Astra; Anthropic Claude Sonnet and Opus 5.5; Google Gemini 3.8 Flash.
-- Docker deployment, invitation-only accounts, per-project access, server-side API keys, and local media storage with deletion and configurable retention.
+- Docker deployment, invitation-only accounts, per-project access, server-side API keys, and local media storage with deletion and configurable retention. Admins create expiring invitation links and send them manually in the first release.
 - A usage dashboard showing input, output, cache, and reasoning tokens where available; estimated cost per call, agent, round, and complete review; and pre-call budget checks.
 - BytePlus Seedance 2.5 API integration in a later phase.
 

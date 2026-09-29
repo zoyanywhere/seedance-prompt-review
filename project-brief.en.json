@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "updated_at": "2026-09-29",
   "status": "Architecture approved for initial implementation; video concept to follow",
   "project": {
@@ -24,6 +24,9 @@
   "storyboard": {
     "source": "human creator brief and approved reference media",
     "format": "editable shot list with visual preview image per shot",
+    "preview_policy": "Generate visual previews from each shot and approved creator references where appropriate; creators can replace or reject a preview. Previews illustrate planned composition but are not automatically sent to Seedance as reference assets.",
+    "authority_order": ["human creator brief and explicit must-haves", "creator-provided reference media and roles", "creator-approved storyboard text", "creator-approved visual previews", "agent suggestions"],
+    "agent_use": "Visual and continuity reviewers may inspect approved previews alongside source references to catch framing, identity, prop, and transition conflicts; they must cite which source controls a disputed detail.",
     "fields_per_shot": ["shot_id", "time_window", "visible_action", "characters_and_objects", "camera", "lighting_and_style", "audio_or_dialogue", "start_state", "end_state", "must_haves", "reference_media_ids"],
     "approval": "human creators approve a version before prompt review",
     "change_control": "agents may propose changes but cannot silently alter an approved version"
@@ -55,7 +58,7 @@
     "default_budget": "To be set after observing initial real reviews"
   },
   "accounts_and_storage": {
-    "invites": "Admins invite users",
+    "invites": "Admins generate one-time, expiring invitation links and send them manually; no outbound email provider is required in the first release",
     "project_visibility": "Own projects and explicitly shared projects only",
     "media_storage": "Docker server initially; deletion and configurable retention",
     "secrets": "API keys server-side only; never commit .env or expose keys to browser clients"
@@ -102,5 +105,5 @@
     "visible_ids": ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra", "claude-sonnet-5-5", "claude-opus-5-5", "gemini-3.8-flash"],
     "limitation": "Listing visibility does not prove successful inference or sufficient quota"
   },
-  "open_items": ["Creator video concept after Ask YT discussion", "Production domain and server environment", "Invitation email delivery provider or manual invite links", "Visual style and generation model for storyboard preview images", "Media retention period", "Default review budget after initial measurements", "Live API inference and rate-limit checks during implementation"]
+  "open_items": ["Creator video concept after Ask YT discussion", "Production domain and server environment to be decided separately", "Visual style and generation model for storyboard preview images", "Media retention period", "Default review budget after initial measurements", "Live API inference and rate-limit checks during implementation"]
 }
