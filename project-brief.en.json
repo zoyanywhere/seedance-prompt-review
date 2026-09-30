@@ -20,7 +20,11 @@
       "Live provider inference and image quality checks with the configured API accounts",
       "Load and security testing with realistic media, users, and budgets"
     ],
-    "later_product_scope": ["BytePlus video generation", "Creator video concept after Ask YT discussion", "Optional project sharing"]
+    "later_product_scope": [
+      "BytePlus video generation",
+      "Creator video concept after Ask YT discussion",
+      "Optional project sharing"
+    ]
   },
   "project": {
     "name": "Seedance Prompt Review Pipeline",
@@ -314,5 +318,11 @@
       ],
       "acceptance": "Desktop and mobile core workflows remain usable with 3D disabled"
     }
+  },
+  "seedance_handoff": {
+    "phase": "prompt handoff only; BytePlus generation remains later",
+    "prompt_aliases": "Use @ImageN, @VideoN, and @AudioN in the copyable final prompt; number each media type separately in upload order.",
+    "reference_files": "Show the matching original filename and role under the prompt. The creator uploads the files to the external video studio in that order; names or aliases alone do not attach media.",
+    "settings": "Set duration, aspect ratio, and resolution in separate video-generation controls, not as a prompt header."
   }
 }
