@@ -357,10 +357,15 @@ def update_media_role(media_id: int, body: MediaRoleIn, user: User = Depends(req
     project = get_project(db, media.project_id, user)
     if project.status in {"review_running", "storyboard_running", "preview_running"}:
         raise HTTPException(409, "Review is running")
-    media.role = body.role.strip()
+    new_role = body.role.strip()
+    if len(new_role) < 3:
+        raise HTTPException(422, "Reference role must contain at least 3 characters")
+    if media.role == new_role:
+        return {"ok": True}
+    media.role = new_role
     project.storyboard_approved_at = None
     project.prompt_approved_at = None
-    project.status = "draft"
+    project.status = "storyboard_draft" if (project.storyboard or {}).get("shots") else "draft"
     db.commit()
     return {"ok": True}
 
