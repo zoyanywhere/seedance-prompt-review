@@ -53,6 +53,7 @@ class ModelResult:
     reasoning_tokens: int = 0
     attempts: int = 1
     model: str = ""
+    finish_reason: str = ""
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int, cached_tokens: int = 0) -> float | None:
@@ -177,12 +178,15 @@ def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, 
                 config=types.GenerateContentConfig(max_output_tokens=max_output_tokens, response_mime_type="application/json"),
             )
             usage = response.usage_metadata
+            candidates = response.candidates or []
+            finish = getattr(candidates[0], "finish_reason", None) if candidates else None
             return ModelResult(
                 response.text or "",
                 getattr(usage, "prompt_token_count", 0) or 0,
                 getattr(usage, "candidates_token_count", 0) or 0,
                 getattr(usage, "cached_content_token_count", 0) or 0,
                 getattr(usage, "thoughts_token_count", 0) or 0,
+                finish_reason=getattr(finish, "name", str(finish or "")),
             )
         finally:
             for name in uploaded:
