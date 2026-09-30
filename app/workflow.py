@@ -55,6 +55,10 @@ def project_context(project: Project, media: list[Media]) -> str:
 
 def record_call(db: Session, project: Project, phase: str, prompt: str, media: list[Media], *, review: Review | None = None, max_output: int = 2200, round_number: int = 0, json_retry: bool = True) -> Any:
     model = MODEL_IDS[phase]
+    # Gemini counts reasoning toward max_output_tokens. Multimodal specialist calls
+    # need headroom for both reasoning and a complete JSON findings object.
+    if phase in {"camera_visuals", "audio_dialogue"} and model.startswith("gemini-"):
+        max_output = max(max_output, 8192)
     if review:
         spent = db.scalar(select(func.coalesce(func.sum(Usage.estimated_cost_usd), 0)).where(Usage.review_id == review.id)) or 0
         reserve = preflight_estimate(model, prompt, max_output, len(media))
@@ -84,7 +88,8 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
             usage.status = "invalid_json"
             db.commit()
             if not json_retry:
-                raise ValueError(f"{phase} returned invalid JSON after one retry") from exc
+                finish = f" (Gemini finish reason: {result.finish_reason})" if result.finish_reason else ""
+                raise ValueError(f"{phase} returned invalid JSON after one retry{finish}") from exc
             retry_prompt = (
                 prompt + "\n\nYour previous response could not be parsed as JSON. "
                 "Regenerate the complete answer as one compact valid JSON object. "

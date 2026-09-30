@@ -305,6 +305,34 @@ def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
     assert all(row.estimated_cost_usd is not None for row in rows)
 
 
+
+def test_gemini_specialist_json_retry_has_reasoning_headroom(monkeypatch):
+    from app import workflow
+    from app.db import Project, Usage
+    from app.workflow import record_call
+
+    limits = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        limits.append(kwargs["max_output_tokens"])
+        body = '{"findings":[' if len(limits) == 1 else '{"findings":[],"verdict":"clear"}'
+        return ModelResult(body, input_tokens=100, output_tokens=40, reasoning_tokens=2000,
+                           model="gemini-3.8-flash")
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    monkeypatch.setitem(workflow.MODEL_IDS, "camera_visuals", "gemini-3.8-flash")
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == "admin@example.test"))
+        project = Project(owner_id=user.id, title="Gemini JSON", brief="A simple scene")
+        db.add(project)
+        db.commit()
+        result = record_call(db, project, "camera_visuals", "Review this prompt", [])
+        rows = db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)).all()
+    assert result == {"findings": [], "verdict": "clear"}
+    assert limits == [8192, 8192]
+    assert [row.status for row in rows] == ["invalid_json", "completed"]
+
+
 def test_preview_progress_cost_and_restart_recovery(monkeypatch):
     from app import main as app_main
     from app.db import Project, Usage
