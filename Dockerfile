@@ -14,6 +14,7 @@ COPY --from=builder /wheels /wheels
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
     && python -m pip install --no-cache-dir --upgrade 'setuptools>=78.1.1' \
+    && python -m pip uninstall --yes pip \
     && rm -rf /wheels
 COPY app ./app
 RUN mkdir -p /app/data/media && chown -R app:app /app/data
