@@ -58,6 +58,9 @@ def test_second_gemini_fallback_after_overload(monkeypatch):
 
 
 def setup_function():
+    from app.security import _attempts
+
+    _attempts.clear()
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     Path("data/test_media").mkdir(parents=True, exist_ok=True)
