@@ -57,7 +57,7 @@ The complete workflow must work on desktop and mobile. On phones, brief entry, r
 ## Implementation and later phases
 
 - LangGraph for the bounded review graph; the application database stores storyboard versions, reviews, usage, and human approval decisions.
-- OpenAI GPT-6 Luna, Sol, and Astra; Anthropic Claude Sonnet and Opus 5.5; Google Gemini 3.8 Flash. Transient Gemini 3.8 overloads are retried and then routed to Gemini 3.5 Flash; the actual model and retry count appear in usage records. Google currently limits Gemini 2.5 access for new users.
+- OpenAI GPT-6 Luna, Sol, and Astra; Anthropic Claude Sonnet and Opus 5.5; Google Gemini 3.8 Flash. Transient Gemini 3.8 overloads are retried, then routed to Gemini 3.5 Flash and 3.5 Flash-Lite if needed; the actual successful model and attempt count appear in usage records. Google currently limits Gemini 2.5 access for new users.
 - Docker deployment, invitation-only accounts, project ownership checks, server-side API keys, and private local media storage. Admins create expiring invitation links and send them manually.
 - A usage dashboard showing input, output, cache, and reasoning tokens where available; estimated cost per call, agent, round, and complete review; and pre-call budget checks.
 - BytePlus Seedance 2.5 API integration in a later phase.

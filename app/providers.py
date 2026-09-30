@@ -40,6 +40,7 @@ RATES = {
     "claude-opus-5-5": (4.00, 20.00, 0.20),
     "gemini-3.8-flash": (0.75, 3.75, 0.075),
     "gemini-3.5-flash": (1.50, 9.00, 0.15),
+    "gemini-3.5-flash-lite": (0.30, 2.50, 0.03),
 }
 
 
@@ -102,13 +103,18 @@ def call_model(phase: str, prompt: str, media: list[Media] | None = None, *, max
             if not transient:
                 raise
             if attempt == 3:
-                fallback = "gemini-3.5-flash" if primary_model == "gemini-3.8-flash" else ""
-                if not fallback:
+                if primary_model != "gemini-3.8-flash":
                     raise
-                result = _call_model_once(phase, prompt, media, max_output_tokens=max_output_tokens, model_override=fallback)
-                result.attempts = 4
-                result.model = fallback
-                return result
+                for fallback_attempt, fallback in enumerate(("gemini-3.5-flash", "gemini-3.5-flash-lite"), start=4):
+                    try:
+                        result = _call_model_once(phase, prompt, media, max_output_tokens=max_output_tokens, model_override=fallback)
+                        result.attempts = fallback_attempt
+                        result.model = fallback
+                        return result
+                    except Exception as fallback_exc:
+                        fallback_status = getattr(fallback_exc, "status_code", None) or getattr(fallback_exc, "code", None)
+                        if fallback_attempt == 5 or fallback_status not in {408, 429, 500, 502, 503, 504}:
+                            raise
             time.sleep(attempt * 2)
     raise RuntimeError("Model retry loop exhausted")
 
