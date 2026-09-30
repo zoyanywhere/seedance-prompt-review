@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from .db import Invitation, LoginSession, Media, Preview, Project, Review, SessionLocal, Usage, User, init_db, utcnow
 from .providers import MEDIA_ROOT, MODEL_IDS
 from .security import COOKIE_NAME, SECURE_COOKIES, SESSION_HOURS, current_user, digest, get_db, hash_password, new_login, require_admin, require_csrf, throttle, token, verify_password
-from .workflow import generate_storyboard, run_review, validate_settings, validate_storyboard
+from .workflow import generate_storyboard, normalize_storyboard_references, run_review, validate_settings, validate_storyboard
 
 STATIC_ROOT = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -554,7 +554,7 @@ def save_storyboard(project_id: int, body: StoryboardIn, user: User = Depends(re
     ids = [str(shot.get("id", "")) for shot in body.shots]
     if any(not shot_id for shot_id in ids) or len(ids) != len(set(ids)):
         raise HTTPException(422, "Every shot needs a unique ID")
-    project.storyboard = body.model_dump()
+    project.storyboard = normalize_storyboard_references(body.model_dump())
     project.storyboard_version += 1
     project.storyboard_approved_at = None
     project.prompt_approved_at = None
@@ -568,6 +568,7 @@ def approve_storyboard(project_id: int, user: User = Depends(require_csrf), db: 
     project = get_project(db, project_id, user)
     if project.status != "storyboard_draft" or not project.storyboard or not project.storyboard.get("shots"):
         raise HTTPException(409, "No storyboard draft to approve")
+    project.storyboard = normalize_storyboard_references(project.storyboard)
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
     errors = validate_settings(project, media) + validate_storyboard(project, media)
     if errors:

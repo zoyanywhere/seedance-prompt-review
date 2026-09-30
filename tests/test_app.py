@@ -9,7 +9,7 @@ os.environ["SECURE_COOKIES"] = "false"
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.db import Base, Preview, SessionLocal, User, engine
+from app.db import Base, Preview, Project, SessionLocal, User, engine
 from app.main import app
 from app.security import hash_password
 from app.providers import ModelResult
@@ -116,6 +116,30 @@ def test_project_urls_do_not_grant_access_to_other_accounts():
             csrf = visitor.get("/api/auth/me").json()["csrf"]
             update = visitor.put(f"/api/projects/{project_id}", json={"title": "Changed", "brief": "Another scene."}, headers={"X-CSRF-Token": csrf})
             assert update.status_code == 404
+
+
+
+def test_storyboard_zero_reference_means_no_reference_but_unknown_id_fails():
+    with TestClient(app) as client:
+        csrf = signin(client)
+        project = client.post("/api/projects", json={"title": "End card", "brief": "End with a title card."}, headers={"X-CSRF-Token": csrf}).json()
+        project_id = project["id"]
+        shots = [{"id": "07_endcard", "time_window": "6-8s", "visible_action": "Show the end card.", "reference_media_ids": [0]}]
+        response = client.put(f"/api/projects/{project_id}/storyboard", json={"shots": shots, "open_questions": []}, headers={"X-CSRF-Token": csrf})
+        assert response.status_code == 200, response.text
+        assert response.json()["storyboard"]["shots"][0]["reference_media_ids"] == []
+        with SessionLocal() as db:
+            stored = db.get(Project, project_id)
+            stored.storyboard = {"shots": shots, "open_questions": []}
+            db.commit()
+        approved = client.post(f"/api/projects/{project_id}/storyboard/approve", headers={"X-CSRF-Token": csrf})
+        assert approved.status_code == 200, approved.text
+        assert approved.json()["storyboard"]["shots"][0]["reference_media_ids"] == []
+
+        shots[0]["reference_media_ids"] = [999]
+        response = client.put(f"/api/projects/{project_id}/storyboard", json={"shots": shots, "open_questions": []}, headers={"X-CSRF-Token": csrf})
+        assert response.status_code == 200
+        assert client.post(f"/api/projects/{project_id}/storyboard/approve", headers={"X-CSRF-Token": csrf}).status_code == 422
 
 
 def test_storyboard_and_review_gate(monkeypatch):
