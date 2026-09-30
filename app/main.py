@@ -133,7 +133,7 @@ def project_data(db: Session, project: Project) -> dict:
         "review": review_data(review) if review else None,
         "usage": [{"phase": x.phase, "round": x.round_number, "model": x.model, "input_tokens": x.input_tokens,
                    "output_tokens": x.output_tokens, "cached_tokens": x.cached_tokens,
-                   "reasoning_tokens": x.reasoning_tokens, "estimated_cost_usd": x.estimated_cost_usd,
+                   "reasoning_tokens": x.reasoning_tokens, "attempts": x.attempts, "estimated_cost_usd": x.estimated_cost_usd,
                    "status": x.status} for x in usage],
         "total_estimated_cost_usd": round(sum(x.estimated_cost_usd or 0 for x in usage), 6),
     }

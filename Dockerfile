@@ -1,11 +1,12 @@
-FROM python:3.12.11-slim-bookworm AS builder
+FROM python:3.14.7-slim-bookworm AS builder
 WORKDIR /build
 COPY requirements.txt .
 RUN python -m pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
-FROM python:3.12.11-slim-bookworm AS runtime
+FROM python:3.14.7-slim-bookworm AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MEDIA_ROOT=/app/data/media
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 app && useradd --uid 10001 --gid app --home-dir /app --no-create-home app
 WORKDIR /app
