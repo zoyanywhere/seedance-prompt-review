@@ -249,6 +249,6 @@ def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
         result = record_call(db, project, "challenge_review", "Review this prompt", [])
         rows = db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)).all()
     assert result == {"findings": [], "verdict": "clear"}
-    assert len(prompts) == 2 and "invalid JSON" in prompts[1]
+    assert len(prompts) == 2 and "parsed as JSON" in prompts[1]
     assert [row.status for row in rows] == ["invalid_json", "completed"]
     assert all(row.estimated_cost_usd is not None for row in rows)
