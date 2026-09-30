@@ -252,3 +252,44 @@ def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
     assert len(prompts) == 2 and "parsed as JSON" in prompts[1]
     assert [row.status for row in rows] == ["invalid_json", "completed"]
     assert all(row.estimated_cost_usd is not None for row in rows)
+
+
+def test_preview_progress_cost_and_restart_recovery(monkeypatch):
+    from app import main as app_main
+    from app.db import Project, Usage
+
+    monkeypatch.setattr(app_main, "_preview_task", lambda *args: None)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        headers = {"X-CSRF-Token": csrf}
+        project = client.post("/api/projects", json={"title": "Preview progress", "brief": "Two simple shots."}, headers=headers).json()
+        pid = project["id"]
+        saved = client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "visible_action": "A light appears."},
+                      {"id": "shot-2", "visible_action": "The light moves."}],
+            "open_questions": [],
+        })
+        assert saved.status_code == 200
+        started = client.post(f"/api/projects/{pid}/previews", headers=headers,
+                              json={"shot_ids": ["shot-1", "shot-2"]})
+        assert started.status_code == 200
+        current = client.get(f"/api/projects/{pid}").json()
+        assert current["preview_progress"]["total"] == 2
+        assert current["preview_progress"]["completed"] == 0
+        assert "_preview_job" not in current["storyboard"]
+        with SessionLocal() as db:
+            record = db.get(Project, pid)
+            app_main._update_preview_progress(db, record, completed=1, current_index=2,
+                                              current_shot="shot-2", completed_shot_ids=["shot-1"])
+            db.add(Usage(project_id=pid, phase="preview", model="gemini-3.1-flash-image",
+                         status="running", estimated_cost_usd=0.067))
+            db.commit()
+        updated = client.get(f"/api/projects/{pid}").json()
+        assert updated["preview_progress"]["completed"] == 1
+        assert updated["preview_progress"]["current_shot"] == "shot-2"
+        assert updated["total_estimated_cost_usd"] == 0.067
+    with TestClient(app) as client:
+        signin(client)
+        interrupted = client.get(f"/api/projects/{pid}").json()
+        assert interrupted["status"] == "storyboard_draft"
+        assert interrupted["preview_progress"]["status"] == "interrupted"
