@@ -327,11 +327,19 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
 
     def supervisor(state: ReviewState) -> ReviewState:
         value = record_call(db, project, "supervisor", (
-            "Resolve supported findings, revise only the prompt, and document unresolved risks. "
+            "Resolve every supported prompt-level finding before returning a prompt. Compare specialists' "
+            "claims with the approved storyboard and reference roles; reject speculative objections. "
+            "Choose and document reasonable production defaults yourself, including shot timing, visual treatment, "
+            "legibility, and reference interpretation. If a creator requires an exact frame but output FPS is "
+            "not a supported setting, preserve that intent, give an actionable timestamp, and flag the exact-frame "
+            "guarantee as an output risk. Never ask the creator to adjudicate agent opinions. "
+            "Revise only the prompt, and document genuine unresolved risks. "
             "Return the current prompt verbatim if no supported change is needed. "
             "Do not change creator brief, reference roles, or approved storyboard. "
-            "Return JSON {prompt:string, unresolved_critical:boolean, needs_recheck:boolean, risks:[string], decisions:[string]}. "
-            "If an issue requires changing approved storyboard or creator input, leave it unresolved.\nCONTEXT:\n" + context +
+            "Return JSON {prompt:string, unresolved_critical:boolean, needs_recheck:boolean, risks:[string], decisions:[string], creator_questions:[string]}. "
+            "Ask the creator only when an essential fact or permission cannot be inferred or safely expressed as a "
+            "conditional instruction. If an issue truly requires changing the approved storyboard or creator input, "
+            "leave it unresolved and explain the precise decision needed.\nCONTEXT:\n" + context +
             "\nCURRENT PROMPT:\n" + state["prompt"] + "\nFINDINGS:\n" +
             json.dumps({**state["findings"], "challenge_review": state["challenge"]}, ensure_ascii=False)
         ), [m for m in media if m.kind == "image"], review=review, max_output=3300, round_number=state["round"])
@@ -346,11 +354,13 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
                    for f in (state.get("findings", {}).get(source, {}) if source != "challenge_review" else state.get("challenge", {})).get("findings", [])
                    if f.get("severity") in {"critical", "major"}]
         critical = bool(state["supervisor"].get("unresolved_critical")) or any(f.get("severity") == "critical" for f in serious)
-        must_recheck = (bool(serious) or bool(state["supervisor"].get("needs_recheck"))
-                        or bool(state.get("gate", {}).get("prompt_changed")) or not result["passed"])
+        # A second paid review is useful only after the text being reviewed changed.
+        # Persistent findings on an identical prompt need adjudication, not repetition.
+        must_recheck = bool(state.get("gate", {}).get("prompt_changed"))
         gate = {"serious_findings": serious, "critical": critical, "must_recheck": must_recheck,
                 "round_limit_reached": state["round"] >= MAX_REVIEW_ROUNDS,
-                "ready": not must_recheck and not critical and result["passed"]}
+                "ready": not serious and not critical and not must_recheck
+                and not state["supervisor"].get("needs_recheck") and result["passed"]}
         return {"linter": result, "gate": gate}
 
     def route(state: ReviewState) -> str:
