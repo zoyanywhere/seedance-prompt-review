@@ -56,3 +56,8 @@
 .shot-preview-tools{margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:12px;background:#fff8f3}
 .shot-preview-tools strong{display:block;font-size:.8rem}
 .shot-preview-tools p{margin:5px 0 12px;color:var(--muted);font-size:.74rem;line-height:1.45}
+
+.review-progress{margin-top:18px;border-color:#efb08b;background:#fff8f3}
+.review-progress h3{margin:10px 0 14px}
+.review-progress progress{display:block;width:100%;height:12px;accent-color:var(--orange)}
+.review-progress p{margin:12px 0 0;font-size:.85rem}
