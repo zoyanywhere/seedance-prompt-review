@@ -36,6 +36,27 @@ def test_gemini_overload_uses_recorded_fallback(monkeypatch):
     assert result.model == "gemini-3.5-flash" and result.attempts == 4
 
 
+def test_second_gemini_fallback_after_overload(monkeypatch):
+    from app import providers
+
+    calls = []
+
+    class Overloaded(Exception):
+        status_code = 503
+
+    def fake_call(phase, prompt, media, **kwargs):
+        calls.append(kwargs.get("model_override") or providers.MODEL_IDS[phase])
+        if len(calls) < 5:
+            raise Overloaded()
+        return ModelResult('{"ok":true}')
+
+    monkeypatch.setattr(providers, "_call_model_once", fake_call)
+    monkeypatch.setattr(providers.time, "sleep", lambda _: None)
+    result = providers.call_model("camera_visuals", "test")
+    assert calls[-2:] == ["gemini-3.5-flash", "gemini-3.5-flash-lite"]
+    assert result.model == "gemini-3.5-flash-lite" and result.attempts == 5
+
+
 def setup_function():
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
