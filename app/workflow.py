@@ -128,6 +128,25 @@ def validate_settings(project: Project, media: list[Media]) -> list[str]:
     return errors
 
 
+def normalize_storyboard_references(storyboard: dict[str, Any]) -> dict[str, Any]:
+    """Treat an agent's zero/null placeholder as no media reference."""
+    normalized = {**storyboard}
+    normalized["shots"] = []
+    for shot in storyboard.get("shots", []):
+        if not isinstance(shot, dict):
+            normalized["shots"].append(shot)
+            continue
+        shot = {**shot}
+        refs = shot.get("reference_media_ids", [])
+        if isinstance(refs, list):
+            shot["reference_media_ids"] = [
+                ref for ref in refs
+                if ref is not None and str(ref).strip().lower() not in {"", "0", "none", "null"}
+            ]
+        normalized["shots"].append(shot)
+    return normalized
+
+
 def validate_storyboard(project: Project, media: list[Media]) -> list[str]:
     storyboard = project.storyboard or {}
     shots = storyboard.get("shots", [])
@@ -198,6 +217,7 @@ def generate_storyboard(db: Session, project: Project, media: list[Media]) -> di
     if not isinstance(storyboard, dict) or not isinstance(storyboard.get("shots"), list) or not storyboard["shots"]:
         raise ValueError("Storyboard agent returned no shots")
     storyboard["shots"] = storyboard["shots"][:20]
+    storyboard = normalize_storyboard_references(storyboard)
     storyboard["intake"] = intake
     project.storyboard = storyboard
     project.storyboard_version += 1
