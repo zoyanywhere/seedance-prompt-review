@@ -281,6 +281,47 @@ def test_persistent_critical_finding_blocks_approval_and_escalates(monkeypatch):
         assert client.post(f"/api/projects/{pid}/prompt/approve", headers={"X-CSRF-Token": csrf}).status_code == 409
 
 
+def test_blocked_review_can_be_revised_by_agents(monkeypatch):
+    import json
+
+    drafts = []
+    old_prompt = "A fox crosses snow."
+    new_prompt = "A fox crosses snow from 0 to 8 seconds, keeping its appearance."
+
+    def fake_model(phase, prompt, media, **kwargs):
+        if phase == "prompt_draft":
+            drafts.append(prompt)
+            return ModelResult(json.dumps({"prompt": old_prompt if len(drafts) == 1 else new_prompt}))
+        if phase == "continuity" and len(drafts) == 1:
+            return ModelResult('{"findings":[{"severity":"major","message":"Continuity needs timing"}]}')
+        if phase in {"action_timing", "camera_visuals", "audio_dialogue", "continuity", "challenge_review"}:
+            return ModelResult('{"findings":[]}')
+        if phase == "supervisor":
+            current = old_prompt if len(drafts) == 1 else new_prompt
+            return ModelResult(json.dumps({"prompt": current, "unresolved_critical": False,
+                                           "needs_recheck": False, "risks": [], "decisions": []}))
+        raise AssertionError(phase)
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        headers = {"X-CSRF-Token": csrf}
+        project = client.post("/api/projects", json={"title": "Revision", "brief": "Fox crosses snow."}, headers=headers).json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "Fox crosses snow."}],
+        })
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers=headers)
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        assert client.get(f"/api/projects/{pid}").json()["review"]["status"] == "needs_changes"
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        revised = client.get(f"/api/projects/{pid}").json()
+        assert revised["review"]["status"] == "ready_for_approval"
+        assert revised["prompt"] == new_prompt
+        assert old_prompt in drafts[1]
+        assert "Continuity needs timing" in drafts[1]
+
+
 def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
     from app.db import Project, Usage
     from app.workflow import record_call

@@ -20,6 +20,7 @@ class BudgetExceeded(Exception):
 
 class ReviewState(TypedDict, total=False):
     prompt: str
+    revision_context: dict[str, Any]
     findings: dict[str, Any]
     challenge: dict[str, Any]
     supervisor: dict[str, Any]
@@ -286,6 +287,21 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         if state.get("prompt") and state.get("round") == 1:
             checkpoint(state["prompt"], 1, state.get("findings", {}))
             return {"prompt": state["prompt"], "round": 1, "findings": state.get("findings", {})}
+        previous = state.get("revision_context")
+        if previous:
+            value = record_call(db, project, "prompt_draft", (
+                "Revise this Seedance 2.5 prompt using the prior agent review. Fix every supported prompt-level "
+                "finding while preserving the creator brief, approved storyboard, and reference roles. "
+                "Resolve specialist disagreements by evidence; do not merely repeat the old prompt. "
+                "For requirements the model cannot guarantee, express the intended timestamp/action and state "
+                "the residual limitation without inventing a creator decision. Return JSON {prompt:string}."
+                "\nCONTEXT:\n" + context + "\nPREVIOUS PROMPT:\n" + previous["prompt"] +
+                "\nPREVIOUS REVIEW:\n" + json.dumps(previous["findings"], ensure_ascii=False)
+            ), [m for m in media if m.kind == "image"], review=review, max_output=4000, round_number=1)
+            if not isinstance(value, dict) or not isinstance(value.get("prompt"), str) or not value["prompt"].strip():
+                raise ValueError("Prompt revision was invalid")
+            checkpoint(value["prompt"], 1, {})
+            return {"prompt": value["prompt"], "round": 1, "findings": {}}
         value = record_call(db, project, "prompt_draft", (
             "Write a concrete Seedance 2.5 prompt strictly bound to this approved storyboard. "
             "Return JSON with key prompt. Include ordered visible actions, camera, audio, and reference IDs. "
@@ -412,6 +428,17 @@ def run_review(db: Session, project: Project, media: list[Media], review: Review
     try:
         signature = review_checkpoint_signature(db, project, media)
         initial: ReviewState = {}
+        prior_revision = db.scalar(select(Review).where(
+            Review.project_id == project.id,
+            Review.storyboard_version == project.storyboard_version,
+            Review.status == "needs_changes",
+            Review.id < review.id,
+        ).order_by(Review.id.desc()))
+        if prior_revision and prior_revision.final_prompt:
+            initial["revision_context"] = {
+                "prompt": prior_revision.final_prompt,
+                "findings": prior_revision.findings or {},
+            }
         previous = db.scalars(select(Review).where(
             Review.project_id == project.id,
             Review.storyboard_version == project.storyboard_version,
