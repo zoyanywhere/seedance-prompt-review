@@ -110,7 +110,7 @@ def clean_email(email: str) -> str:
 
 def get_project(db: Session, project_id: int, user: User) -> Project:
     project = db.get(Project, project_id)
-    if not project or (project.owner_id != user.id and not user.is_admin):
+    if not project or project.owner_id != user.id:
         raise HTTPException(404, "Project not found")
     return project
 

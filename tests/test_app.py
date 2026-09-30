@@ -58,6 +58,9 @@ def test_second_gemini_fallback_after_overload(monkeypatch):
 
 
 def setup_function():
+    from app.security import _attempts
+
+    _attempts.clear()
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     Path("data/test_media").mkdir(parents=True, exist_ok=True)
@@ -89,6 +92,30 @@ def test_invitation_and_project_isolation():
         assert client.post("/api/projects", json={"title": "Bad", "brief": "test"}).status_code == 403
         client.post("/api/auth/logout", headers={"X-CSRF-Token": creator_csrf})
         assert client.get(f"/api/projects/{project_id}").status_code == 401
+
+
+
+def test_project_urls_do_not_grant_access_to_other_accounts():
+    with SessionLocal() as db:
+        db.add(User(email="creator@example.test", name="Creator", password_hash=hash_password("strong-creator-passphrase"), is_admin=False))
+        db.add(User(email="other@example.test", name="Other", password_hash=hash_password("strong-other-passphrase"), is_admin=False))
+        db.commit()
+
+    with TestClient(app) as owner:
+        csrf = signin(owner, "creator@example.test", "strong-creator-passphrase")
+        response = owner.post("/api/projects", json={"title": "Private film", "brief": "A fox crosses a snowy field."}, headers={"X-CSRF-Token": csrf})
+        assert response.status_code == 200, response.text
+        project_id = response.json()["id"]
+        assert owner.get(f"/api/projects/{project_id}").status_code == 200
+
+    for email, password in [("other@example.test", "strong-other-passphrase"), ("admin@example.test", "strong-admin-passphrase")]:
+        with TestClient(app) as visitor:
+            signin(visitor, email, password)
+            response = visitor.get(f"/api/projects/{project_id}")
+            assert response.status_code == 404
+            csrf = visitor.get("/api/auth/me").json()["csrf"]
+            update = visitor.put(f"/api/projects/{project_id}", json={"title": "Changed", "brief": "Another scene."}, headers={"X-CSRF-Token": csrf})
+            assert update.status_code == 404
 
 
 def test_storyboard_and_review_gate(monkeypatch):
