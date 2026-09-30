@@ -67,7 +67,7 @@ function reviewProgress(p){
  if(p.status!=='review_running')return '';
  const phase=p.review?.phase||'starting';
  const labels={starting:'Preparing the review',prompt_draft:'Drafting the prompt',action_timing:'Checking action and timing',camera_visuals:'Checking camera and visuals',audio_dialogue:'Checking audio and dialogue',continuity:'Checking continuity',challenge_review:'Challenging the specialist findings',supervisor:'Resolving the findings',critical_escalation:'Checking a critical conflict'};
- const calls=p.usage.filter(u=>Number(u.round)>0);
+ const calls=p.usage.filter(u=>u.review_id===p.review?.id);
  const completed=calls.filter(u=>u.status==='completed').length;
  const round=Math.max(1,...calls.map(u=>Number(u.round)||1));
  return `<div id="review-progress" class="card review-progress" role="status" aria-live="polite"><span class="eyebrow">REVIEW IN PROGRESS</span><h3>${escapeHTML(labels[phase]||phase.replaceAll('_',' '))}</h3><progress aria-label="Agent review is running"></progress><p>${completed} model call${completed===1?'':'s'} completed · Round ${round}</p><p class="muted small">The agents may repeat a review round when they find a serious issue. This bar shows activity; the current phase and completed calls update automatically.</p></div>`;

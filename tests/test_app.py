@@ -329,9 +329,54 @@ def test_gemini_specialist_json_retry_has_reasoning_headroom(monkeypatch):
         result = record_call(db, project, "camera_visuals", "Review this prompt", [])
         rows = db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)).all()
     assert result == {"findings": [], "verdict": "clear"}
-    assert limits == [8192, 8192]
+    assert limits == [16384, 16384]
     assert [row.status for row in rows] == ["invalid_json", "completed"]
 
+
+
+
+def test_gemini_max_tokens_retry_increases_output_allowance(monkeypatch):
+    from app import workflow
+    from app.db import Project
+    from app.workflow import record_call
+
+    limits = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        limits.append(kwargs["max_output_tokens"])
+        if len(limits) == 1:
+            return ModelResult('{"findings":[', model="gemini-3.8-flash", finish_reason="MAX_TOKENS")
+        return ModelResult('{"findings":[],"verdict":"clear"}', model="gemini-3.8-flash")
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    monkeypatch.setitem(workflow.MODEL_IDS, "audio_dialogue", "gemini-3.8-flash")
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == "admin@example.test"))
+        project = Project(owner_id=user.id, title="Gemini cutoff", brief="A simple scene")
+        db.add(project)
+        db.commit()
+        result = record_call(db, project, "audio_dialogue", "Review this prompt", [])
+    assert result == {"findings": [], "verdict": "clear"}
+    assert limits == [16384, 32768]
+
+
+def test_gemini_specialists_use_low_thinking(monkeypatch):
+    from types import SimpleNamespace
+    from google.genai import types
+    from app import providers
+
+    captured = {}
+
+    class FakeModels:
+        def generate_content(self, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(text='{"findings":[]}', usage_metadata=None, candidates=[])
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(providers.genai, "Client", lambda **kwargs: SimpleNamespace(models=FakeModels()))
+    providers._call_model_once("audio_dialogue", "Review the audio", [], max_output_tokens=16384)
+    assert captured["config"].thinking_config.thinking_level == types.ThinkingLevel.LOW
+    assert captured["config"].max_output_tokens == 16384
 
 
 def test_claude_specialist_retry_has_full_json_allowance(monkeypatch):
@@ -357,8 +402,58 @@ def test_claude_specialist_retry_has_full_json_allowance(monkeypatch):
         result = record_call(db, project, "continuity", "Review this prompt", [])
         rows = db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)).all()
     assert result == {"findings": [], "verdict": "clear"}
-    assert limits == [8192, 8192]
+    assert limits == [8192, 16384]
     assert [row.status for row in rows] == ["invalid_json", "completed"]
+
+
+
+def test_failed_review_reuses_completed_first_round_steps(monkeypatch):
+    import json
+    calls = []
+    first_continuity = True
+    prompt = "A fox crosses a snowy field in one wide shot, from 0 to 8 seconds."
+
+    def fake_model(phase, model_prompt, media, **kwargs):
+        nonlocal first_continuity
+        calls.append(phase)
+        if phase == "continuity" and first_continuity:
+            first_continuity = False
+            raise RuntimeError("Temporary continuity failure")
+        if phase == "prompt_draft":
+            return ModelResult(json.dumps({"prompt": prompt}))
+        if phase == "supervisor":
+            return ModelResult(json.dumps({
+                "prompt": prompt, "unresolved_critical": False, "needs_recheck": False,
+                "risks": [], "decisions": [],
+            }))
+        if phase in {"action_timing", "camera_visuals", "audio_dialogue", "continuity", "challenge_review"}:
+            return ModelResult('{"findings":[],"verdict":"clear"}')
+        raise AssertionError(phase)
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        headers = {"X-CSRF-Token": csrf}
+        project = client.post("/api/projects", json={"title": "Resume review", "brief": "A fox crosses a snowy field."}, headers=headers).json()
+        pid = project["id"]
+        saved = client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "Fox crosses field.", "reference_media_ids": []}],
+            "open_questions": [],
+        })
+        assert saved.status_code == 200, saved.text
+        assert client.post(f"/api/projects/{pid}/storyboard/approve", headers=headers).status_code == 200
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        failed = client.get(f"/api/projects/{pid}").json()
+        assert failed["review"]["status"] == "failed"
+        assert "_checkpoint" not in failed["review"]["findings"]
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        resumed = client.get(f"/api/projects/{pid}").json()
+        assert resumed["review"]["status"] == "ready_for_approval"
+        assert calls.count("prompt_draft") == 1
+        assert calls.count("action_timing") == 1
+        assert calls.count("camera_visuals") == 1
+        assert calls.count("audio_dialogue") == 1
+        assert calls.count("continuity") == 2
 
 
 def test_preview_progress_cost_and_restart_recovery(monkeypatch):

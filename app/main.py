@@ -136,7 +136,7 @@ def project_data(db: Session, project: Project) -> dict:
                       "estimated_cost_usd": x.estimated_cost_usd, "source_media_ids": x.source_media_ids,
                       "url": f"/api/previews/{x.id}/content"} for x in previews],
         "review": review_data(review) if review else None,
-        "usage": [{"phase": x.phase, "round": x.round_number, "model": x.model, "input_tokens": x.input_tokens,
+        "usage": [{"review_id": x.review_id, "phase": x.phase, "round": x.round_number, "model": x.model, "input_tokens": x.input_tokens,
                    "output_tokens": x.output_tokens, "cached_tokens": x.cached_tokens,
                    "reasoning_tokens": x.reasoning_tokens, "attempts": x.attempts, "estimated_cost_usd": x.estimated_cost_usd,
                    "status": x.status} for x in usage],
@@ -146,7 +146,8 @@ def project_data(db: Session, project: Project) -> dict:
 
 def review_data(review: Review) -> dict:
     return {"id": review.id, "status": review.status, "phase": review.phase,
-            "findings": review.findings, "linter": review.linter, "final_prompt": review.final_prompt,
+            "findings": {key: value for key, value in (review.findings or {}).items() if not key.startswith("_")},
+            "linter": review.linter, "final_prompt": review.final_prompt,
             "error": review.error, "budget_usd": review.budget_usd,
             "storyboard_version": review.storyboard_version}
 
