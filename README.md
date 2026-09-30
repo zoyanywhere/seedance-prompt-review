@@ -15,7 +15,8 @@ An invitation-only web application for reviewing Seedance 2.5 prompts **before**
 5. Four independent specialist reviews examine action/timing, camera/visuals, audio/dialogue, and continuity.
 6. GPT-6 Sol independently challenges the full context and specialist findings.
 7. GPT-6 Sol supervises revisions. Unresolved critical conflicts are escalated to GPT-6 Astra. A deterministic Seedance linter checks structural rules.
-8. Creators review the findings, remaining risks, and final prompt before approval.
+8. Creators review the findings, remaining risks, and final prompt before approval. The final screen maps each uploaded file to its Seedance alias (`@Image1`, `@Video1`, `@Audio1`), in upload order within each media type.
+9. Creators copy the alias-based prompt, upload the listed files in the same order to their video studio, and set duration, aspect ratio, and resolution in the studio's separate controls. This release does not send files to BytePlus or another video studio.
 
 The review loop defaults to three rounds (`MAX_REVIEW_ROUNDS`, allowed range 2–5) and has a cost ceiling. Another specialist round runs only after the supervisor changes the prompt. A last-round revision receives one targeted GPT-6 Sol audit; older findings do not automatically block a corrected prompt. Existing blocked last-round revisions can request that audit without repeating the entire agent team. Major or critical defects in the final text still block approval; persistent critical conflicts are escalated to Astra. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
 
@@ -69,6 +70,8 @@ Before accepting public-server uploads, add an isolated antivirus scanner (for e
 See [the machine-readable project brief](project-brief.en.json) for roles, gates, and source boundaries.
 
 ## Seedance-specific constraints
+
+The internal media database ID is not a Seedance reference token. The final handoff displays `@ImageN`, `@VideoN`, and `@AudioN` aliases and a matching file list. These numbers count independently by media type in upload order: five images and one video yield `@Image1`–`@Image5` and `@Video1`. Text alone cannot attach a file; the creator must upload the listed source files in that order to the external studio. Duration, ratio, and resolution are separate video-generation settings, while shot timing and visual instructions remain in the prompt.
 
 The active task type determines valid settings. Text-to-video and reference-to-video can use creator-selected ratios such as 16:9 and 9:16. Seedance 2.5 editing, extension, and first-frame workflows require `adaptive` ratio; editing requires automatic duration. The first release validates these rules and media references without starting video generation. Current [BytePlus documentation](https://docs.byteplus.com/en/docs/modelark/video-generation-tutorial) is the authority for API and model constraints. Its official Seedance 2.5 prompt guide and skill take priority over community templates.
 
