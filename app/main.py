@@ -614,6 +614,8 @@ def start_review(project_id: int, background: BackgroundTasks,
         raise HTTPException(422, errors)
     prior = db.scalar(select(Review).where(Review.project_id == project.id).order_by(Review.id.desc()))
     prior_gate = (prior.findings or {}).get("quality_gate", {}) if prior else {}
+    if prior and prior.status == "needs_changes" and prior_gate.get("source_conflicts"):
+        raise HTTPException(409, "Reference media conflicts with a required storyboard event. Change the source or storyboard before another paid review.")
     audit_only = bool(prior and prior.status == "needs_changes"
                       and prior.storyboard_version == project.storyboard_version
                       and prior.final_prompt and prior_gate.get("must_recheck")

@@ -402,6 +402,39 @@ def test_existing_last_round_blocker_uses_only_targeted_audit(monkeypatch):
         assert calls == ["final_verification"]
 
 
+def test_source_conflict_cannot_be_cleared_by_prompt_only_audit(monkeypatch):
+    from app.db import Review
+
+    monkeypatch.setattr("app.workflow.call_model", lambda *args, **kwargs: ModelResult(
+        '{"findings":[],"verdict":"Prompt text is clear"}'))
+    with TestClient(app) as client:
+        csrf = signin(client)
+        headers = {"X-CSRF-Token": csrf}
+        project = client.post("/api/projects", json={"title": "Source conflict", "brief": "Car hits the kerb."}, headers=headers).json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "Car hits the kerb."}],
+        })
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers=headers)
+        with SessionLocal() as db:
+            saved = db.get(Project, pid)
+            prior = Review(project_id=pid, storyboard_version=saved.storyboard_version,
+                           status="needs_changes", final_prompt="Car hits the kerb.",
+                           findings={"rounds": 3, "supervisor": {"unresolved_critical": False},
+                                     "quality_gate": {"must_recheck": True, "round_limit_reached": True},
+                                     "camera_visuals": {"findings": [{"severity": "major",
+                                         "message": "Reference video contains no kerb contact.",
+                                         "source_conflict": True}]}})
+            db.add(prior)
+            saved.status = "needs_changes"
+            db.commit()
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        current = client.get(f"/api/projects/{pid}").json()["review"]
+        assert current["status"] == "needs_changes"
+        assert current["findings"]["quality_gate"]["source_conflicts"]
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 409
+
+
 def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
     from app.db import Project, Usage
     from app.workflow import record_call
