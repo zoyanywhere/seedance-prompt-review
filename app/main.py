@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from .db import Invitation, LoginSession, Media, Preview, Project, Review, SessionLocal, Usage, User, init_db, utcnow
 from .providers import MEDIA_ROOT, MODEL_IDS
 from .security import COOKIE_NAME, SECURE_COOKIES, SESSION_HOURS, current_user, digest, get_db, hash_password, new_login, require_admin, require_csrf, throttle, token, verify_password
-from .workflow import generate_storyboard, normalize_storyboard_references, run_review, validate_settings, validate_storyboard
+from .workflow import audit_prior_revision, generate_storyboard, normalize_storyboard_references, run_review, validate_settings, validate_storyboard
 
 STATIC_ROOT = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -588,6 +588,15 @@ def _review_task(project_id: int, review_id: int):
         run_review(db, project, media, review)
 
 
+def _final_audit_task(project_id: int, review_id: int, prior_id: int):
+    with SessionLocal() as db:
+        project = db.get(Project, project_id)
+        review = db.get(Review, review_id)
+        prior = db.get(Review, prior_id)
+        media = list(db.scalars(select(Media).where(Media.project_id == project_id)))
+        audit_prior_revision(db, project, media, prior, review)
+
+
 @app.post("/api/projects/{project_id}/reviews")
 def start_review(project_id: int, background: BackgroundTasks,
                  user: User = Depends(require_csrf), db: Session = Depends(get_db)):
@@ -598,12 +607,22 @@ def start_review(project_id: int, background: BackgroundTasks,
     errors = validate_settings(project, media)
     if errors:
         raise HTTPException(422, errors)
+    prior = db.scalar(select(Review).where(Review.project_id == project.id).order_by(Review.id.desc()))
+    prior_gate = (prior.findings or {}).get("quality_gate", {}) if prior else {}
+    audit_only = bool(prior and prior.status == "needs_changes"
+                      and prior.storyboard_version == project.storyboard_version
+                      and prior.final_prompt and prior_gate.get("must_recheck")
+                      and prior_gate.get("round_limit_reached"))
     review = Review(project_id=project.id, storyboard_version=project.storyboard_version,
-                    budget_usd=max(0.10, min(100.0, float(os.getenv("DEFAULT_REVIEW_BUDGET_USD", "5")))), status="running")
+                    budget_usd=max(0.10, min(100.0, float(os.getenv("DEFAULT_REVIEW_BUDGET_USD", "5")))),
+                    status="running", phase="final_verification" if audit_only else "starting")
     db.add(review)
     project.status = "review_running"
     db.commit()
-    background.add_task(_review_task, project.id, review.id)
+    if audit_only:
+        background.add_task(_final_audit_task, project.id, review.id, prior.id)
+    else:
+        background.add_task(_review_task, project.id, review.id)
     return review_data(review)
 
 

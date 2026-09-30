@@ -322,6 +322,86 @@ def test_blocked_review_can_be_revised_by_agents(monkeypatch):
         assert "Continuity needs timing" in drafts[1]
 
 
+def test_last_round_revision_gets_final_audit_instead_of_stale_blocker(monkeypatch):
+    import json
+    from app import workflow
+    from app.providers import MODEL_IDS
+
+    assert MODEL_IDS["challenge_review"] == "gpt-6-sol"
+    monkeypatch.setattr(workflow, "MAX_REVIEW_ROUNDS", 2)
+    calls = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        calls.append(phase)
+        if phase == "prompt_draft":
+            return ModelResult('{"prompt":"A fox crosses snow."}')
+        if phase == "action_timing":
+            return ModelResult('{"findings":[{"severity":"major","message":"Timing missing"}]}')
+        if phase in {"camera_visuals", "audio_dialogue", "continuity", "challenge_review", "final_verification"}:
+            return ModelResult('{"findings":[],"verdict":"clear"}')
+        if phase == "supervisor":
+            number = calls.count("supervisor")
+            return ModelResult(json.dumps({
+                "prompt": f"A fox crosses snow from 0 to 8 seconds. Revision {number}.",
+                "unresolved_critical": False, "needs_recheck": True, "risks": [],
+            }))
+        raise AssertionError(phase)
+
+    monkeypatch.setattr(workflow, "call_model", fake_model)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        headers = {"X-CSRF-Token": csrf}
+        project = client.post("/api/projects", json={"title": "Final audit", "brief": "Fox crosses snow."}, headers=headers).json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "Fox crosses snow."}],
+        })
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers=headers)
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        review = client.get(f"/api/projects/{pid}").json()["review"]
+        assert review["status"] == "ready_for_approval"
+        assert review["findings"]["quality_gate"]["serious_findings"] == []
+        assert calls.count("final_verification") == 1
+
+
+def test_existing_last_round_blocker_uses_only_targeted_audit(monkeypatch):
+    from app.db import Review
+
+    calls = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        calls.append(phase)
+        assert phase == "final_verification"
+        assert "MCL40 front tires" in prompt
+        return ModelResult('{"findings":[],"verdict":"Prior finding is fixed"}')
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        headers = {"X-CSRF-Token": csrf}
+        project = client.post("/api/projects", json={"title": "Old blocker", "brief": "MCL40 front tires."}, headers=headers).json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "Show MCL40 front tires."}],
+        })
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers=headers)
+        with SessionLocal() as db:
+            saved = db.get(Project, pid)
+            prior = Review(project_id=pid, storyboard_version=saved.storyboard_version,
+                           status="needs_changes", final_prompt="Show MCL40 front tires from 0 to 8 seconds.",
+                           findings={"rounds": 3, "supervisor": {"unresolved_critical": False},
+                                     "quality_gate": {"must_recheck": True, "round_limit_reached": True},
+                                     "challenge_review": {"findings": [{"severity": "major", "message": "Front tires missing"}]}})
+            db.add(prior)
+            saved.status = "needs_changes"
+            db.commit()
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
+        result = client.get(f"/api/projects/{pid}").json()["review"]
+        assert result["status"] == "ready_for_approval"
+        assert result["findings"]["quality_gate"]["serious_findings"] == []
+        assert calls == ["final_verification"]
+
+
 def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
     from app.db import Project, Usage
     from app.workflow import record_call
