@@ -39,6 +39,7 @@ RATES = {
     "claude-sonnet-5-5": (2.00, 10.00, 0.20),
     "claude-opus-5-5": (4.00, 20.00, 0.20),
     "gemini-3.8-flash": (0.75, 3.75, 0.075),
+    "gemini-3.5-flash": (1.50, 9.00, 0.15),
 }
 
 
@@ -50,6 +51,7 @@ class ModelResult:
     cached_tokens: int = 0
     reasoning_tokens: int = 0
     attempts: int = 1
+    model: str = ""
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int, cached_tokens: int = 0) -> float | None:
@@ -87,22 +89,32 @@ def _read_media(media: Media) -> bytes:
 
 
 def call_model(phase: str, prompt: str, media: list[Media] | None = None, *, max_output_tokens: int = 2200) -> ModelResult:
+    primary_model = MODEL_IDS[phase]
     for attempt in range(1, 4):
         try:
             result = _call_model_once(phase, prompt, media, max_output_tokens=max_output_tokens)
             result.attempts = attempt
+            result.model = primary_model
             return result
         except Exception as exc:
             status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
             transient = status in {408, 429, 500, 502, 503, 504} or isinstance(exc, (TimeoutError, ConnectionError))
-            if not transient or attempt == 3:
+            if not transient:
                 raise
+            if attempt == 3:
+                fallback = "gemini-3.5-flash" if primary_model == "gemini-3.8-flash" else ""
+                if not fallback:
+                    raise
+                result = _call_model_once(phase, prompt, media, max_output_tokens=max_output_tokens, model_override=fallback)
+                result.attempts = 4
+                result.model = fallback
+                return result
             time.sleep(attempt * 2)
     raise RuntimeError("Model retry loop exhausted")
 
 
-def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, *, max_output_tokens: int = 2200) -> ModelResult:
-    model = MODEL_IDS[phase]
+def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, *, max_output_tokens: int = 2200, model_override: str | None = None) -> ModelResult:
+    model = model_override or MODEL_IDS[phase]
     media = media or []
     if model.startswith("gpt-"):
         client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=90, max_retries=0)

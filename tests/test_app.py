@@ -15,6 +15,27 @@ from app.security import hash_password
 from app.providers import ModelResult
 
 
+def test_gemini_overload_uses_recorded_fallback(monkeypatch):
+    from app import providers
+
+    calls = []
+
+    class Overloaded(Exception):
+        status_code = 503
+
+    def fake_call(phase, prompt, media, **kwargs):
+        calls.append(kwargs.get("model_override") or providers.MODEL_IDS[phase])
+        if len(calls) < 4:
+            raise Overloaded()
+        return ModelResult('{"ok":true}', input_tokens=10, output_tokens=5)
+
+    monkeypatch.setattr(providers, "_call_model_once", fake_call)
+    monkeypatch.setattr(providers.time, "sleep", lambda _: None)
+    result = providers.call_model("camera_visuals", "test")
+    assert calls == ["gemini-3.8-flash"] * 3 + ["gemini-3.5-flash"]
+    assert result.model == "gemini-3.5-flash" and result.attempts == 4
+
+
 def setup_function():
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)

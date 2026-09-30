@@ -51,6 +51,9 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
     if review:
         spent = db.scalar(select(func.coalesce(func.sum(Usage.estimated_cost_usd), 0)).where(Usage.review_id == review.id)) or 0
         reserve = preflight_estimate(model, prompt, max_output, len(media))
+        if model == "gemini-3.8-flash":
+            fallback_reserve = preflight_estimate("gemini-3.5-flash", prompt, max_output, len(media))
+            reserve = max(reserve or 0, fallback_reserve or 0)
         if reserve is None or spent + reserve > review.budget_usd:
             raise BudgetExceeded(f"Review budget would be exceeded before {phase}; spent ${spent:.3f}, estimated next ${reserve or 0:.3f}")
         review.phase = phase
@@ -60,12 +63,14 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
     db.commit()
     try:
         result = call_model(phase, prompt, media, max_output_tokens=max_output)
+        usage.model = result.model or model
         usage.input_tokens = result.input_tokens
         usage.output_tokens = result.output_tokens
         usage.cached_tokens = result.cached_tokens
         usage.reasoning_tokens = result.reasoning_tokens
         usage.attempts = result.attempts
-        usage.estimated_cost_usd = estimate_cost(model, result.input_tokens, result.output_tokens, result.cached_tokens)
+        billable_output = result.output_tokens + (result.reasoning_tokens if usage.model.startswith("gemini-") else 0)
+        usage.estimated_cost_usd = estimate_cost(usage.model, result.input_tokens, billable_output, result.cached_tokens)
         usage.status = "completed"
         db.commit()
         return parse_json(result.text)
