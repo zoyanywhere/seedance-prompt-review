@@ -592,7 +592,7 @@ def _review_task(project_id: int, review_id: int):
 def start_review(project_id: int, background: BackgroundTasks,
                  user: User = Depends(require_csrf), db: Session = Depends(get_db)):
     project = get_project(db, project_id, user)
-    if project.status != "storyboard_approved" or not project.storyboard_approved_at:
+    if project.status not in {"storyboard_approved", "needs_changes"} or not project.storyboard_approved_at:
         raise HTTPException(409, "Approve the storyboard before review")
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
     errors = validate_settings(project, media)
