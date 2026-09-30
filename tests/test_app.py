@@ -402,7 +402,7 @@ def test_claude_specialist_retry_has_full_json_allowance(monkeypatch):
         result = record_call(db, project, "continuity", "Review this prompt", [])
         rows = db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)).all()
     assert result == {"findings": [], "verdict": "clear"}
-    assert limits == [8192, 8192]
+    assert limits == [8192, 16384]
     assert [row.status for row in rows] == ["invalid_json", "completed"]
 
 
