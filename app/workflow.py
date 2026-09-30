@@ -59,6 +59,10 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
     # need headroom for both reasoning and a complete JSON findings object.
     if phase in {"camera_visuals", "audio_dialogue"} and model.startswith("gemini-"):
         max_output = max(max_output, 8192)
+    # Sonnet/Opus findings can exceed the old 2200-token cap, especially with
+    # six findings. A capped reply is incomplete JSON even when retried.
+    if phase in {"continuity", "challenge_review"} and model.startswith("claude-"):
+        max_output = max(max_output, 8192)
     if review:
         spent = db.scalar(select(func.coalesce(func.sum(Usage.estimated_cost_usd), 0)).where(Usage.review_id == review.id)) or 0
         reserve = preflight_estimate(model, prompt, max_output, len(media))
@@ -88,7 +92,7 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
             usage.status = "invalid_json"
             db.commit()
             if not json_retry:
-                finish = f" (Gemini finish reason: {result.finish_reason})" if result.finish_reason else ""
+                finish = f" (provider finish reason: {result.finish_reason})" if result.finish_reason else ""
                 raise ValueError(f"{phase} returned invalid JSON after one retry{finish}") from exc
             retry_prompt = (
                 prompt + "\n\nYour previous response could not be parsed as JSON. "
