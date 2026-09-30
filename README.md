@@ -75,6 +75,8 @@ The internal media database ID is not a Seedance reference token. The final hand
 
 Creators can edit an attached reference's role after upload. Mark a video as authoritative for camera path, blocking, action, or timing when those properties must be preserved; state explicitly when a subject transforms and the original must disappear. Changing a role clears storyboard and prompt approval so the agents review the revised source instruction. A reference-to-video prompt remains a generative request, not a guarantee of exact motion or frame reproduction; source duration and storyboard shot duration should agree before approval.
 
+If a media specialist finds that an uploaded reference lacks an event required by the approved storyboard, the finding is marked as a source conflict. A prompt-only final audit cannot clear it. The creator must replace the source or revise and reapprove the storyboard before another paid review. The external handoff replaces internal media IDs with the corresponding `@ImageN`, `@VideoN`, or `@AudioN` alias.
+
 The active task type determines valid settings. Text-to-video and reference-to-video can use creator-selected ratios such as 16:9 and 9:16. Seedance 2.5 editing, extension, and first-frame workflows require `adaptive` ratio; editing requires automatic duration. The first release validates these rules and media references without starting video generation. Current [BytePlus documentation](https://docs.byteplus.com/en/docs/modelark/video-generation-tutorial) is the authority for API and model constraints. Its official Seedance 2.5 prompt guide and skill take priority over community templates.
 
 ## Secrets and public repository

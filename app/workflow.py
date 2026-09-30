@@ -205,8 +205,16 @@ def _findings(value: Any) -> dict[str, Any]:
                 "shot_id": item.get("shot_id"),
                 "evidence": str(item.get("evidence", ""))[:1000],
                 "suggestion": str(item.get("suggestion", ""))[:1000],
+                "source_conflict": item.get("source_conflict") is True,
             })
     return {"findings": findings, "verdict": str(value.get("verdict", ""))[:500]}
+
+
+def source_conflicts(findings: dict[str, Any]) -> list[dict[str, Any]]:
+    """Media facts cannot be fixed by changing only the prompt."""
+    return [item for phase in (*SPECIALISTS, "challenge_review")
+            for item in (findings.get(phase) or {}).get("findings", [])
+            if item.get("source_conflict") is True]
 
 
 def generate_storyboard(db: Session, project: Project, media: list[Media]) -> dict[str, Any]:
@@ -321,7 +329,8 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
             value = record_call(db, project, phase, (
                 "You are an independent Seedance 2.5 specialist. " + SPECIALISTS[phase] + " "
                 "Review the prompt against the creator context and approved storyboard. "
-                "Return JSON {findings:[{severity:critical|major|minor,message,shot_id,evidence,suggestion}],verdict}. "
+                "Return JSON {findings:[{severity:critical|major|minor,message,shot_id,evidence,suggestion,source_conflict:boolean}],verdict}. "
+                "Set source_conflict=true only when an uploaded source lacks an event required by the creator or approved storyboard; a prompt rewrite cannot repair that source. "
                 "Report at most six concise, concrete supported issues; do not silently alter creator instructions.\nCONTEXT:\n" + context +
                 "\nPROMPT:\n" + state["prompt"]
             ), (media + preview_media) if phase in {"camera_visuals", "audio_dialogue"} else ([m for m in media if m.kind == "image"] + preview_media), review=review, round_number=state["round"])
@@ -336,7 +345,8 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
             "You are an independent challenge reviewer, positioned after four specialists and before the supervisor. "
             "Check the entire creator context, approved storyboard, all references, current prompt, and specialist findings. "
             "Find at most six concise cross-modal contradictions or omissions. Do not approve changes. "
-            "Return JSON {findings:[{severity,message,shot_id,evidence,suggestion}],verdict}.\nCONTEXT:\n" + context +
+            "Return JSON {findings:[{severity,message,shot_id,evidence,suggestion,source_conflict:boolean}],verdict}. "
+            "Mark a source_conflict when the actual reference media lacks a required event; do not treat a conditional sentence in the prompt as a repair.\nCONTEXT:\n" + context +
             "\nPROMPT:\n" + state["prompt"] + "\nSPECIALISTS:\n" + json.dumps(state["findings"], ensure_ascii=False)
         ), [m for m in media if m.kind == "image"] + preview_media, review=review, max_output=2800, round_number=state["round"])
         result = _findings(value)
@@ -375,9 +385,10 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         # A second paid review is useful only after the text being reviewed changed.
         # Persistent findings on an identical prompt need adjudication, not repetition.
         must_recheck = bool(state.get("gate", {}).get("prompt_changed"))
-        gate = {"serious_findings": serious, "critical": critical, "must_recheck": must_recheck,
+        conflicts = source_conflicts({**state["findings"], "challenge_review": state["challenge"]})
+        gate = {"serious_findings": serious, "source_conflicts": conflicts, "critical": critical, "must_recheck": must_recheck,
                 "round_limit_reached": state["round"] >= MAX_REVIEW_ROUNDS,
-                "ready": not serious and not critical and not must_recheck
+                "ready": not serious and not conflicts and not critical and not must_recheck
                 and not state["supervisor"].get("needs_recheck") and result["passed"]}
         return {"linter": result, "gate": gate}
 
@@ -410,9 +421,10 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         critical = bool(state["supervisor"].get("unresolved_critical")) or any(
             f["severity"] == "critical" for f in serious)
         findings = {**state["findings"], "final_verification": result}
-        gate = {**state["gate"], "serious_findings": serious, "critical": critical,
+        conflicts = source_conflicts({**state["findings"], "challenge_review": state["challenge"]})
+        gate = {**state["gate"], "serious_findings": serious, "source_conflicts": conflicts, "critical": critical,
                 "must_recheck": False,
-                "ready": not serious and not critical and state["linter"]["passed"]}
+                "ready": not serious and not conflicts and not critical and state["linter"]["passed"]}
         return {"findings": findings, "gate": gate}
 
     def route_after_verification(state: ReviewState) -> str:
@@ -554,9 +566,10 @@ def audit_prior_revision(db: Session, project: Project, media: list[Media],
         critical = bool(previous.get("supervisor", {}).get("unresolved_critical")) or any(
             f["severity"] == "critical" for f in serious)
         linter = lint_prompt(project, prior.final_prompt, media)
-        gate = {"serious_findings": serious, "critical": critical, "must_recheck": False,
+        conflicts = source_conflicts(previous)
+        gate = {"serious_findings": serious, "source_conflicts": conflicts, "critical": critical, "must_recheck": False,
                 "round_limit_reached": True,
-                "ready": not serious and not critical and linter["passed"]}
+                "ready": not serious and not conflicts and not critical and linter["passed"]}
         review.findings = {**previous, "final_verification": result, "quality_gate": gate}
         review.linter = linter
         review.final_prompt = prior.final_prompt
