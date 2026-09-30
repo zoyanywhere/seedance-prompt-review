@@ -433,6 +433,13 @@ def test_source_conflict_cannot_be_cleared_by_prompt_only_audit(monkeypatch):
         assert current["status"] == "needs_changes"
         assert current["findings"]["quality_gate"]["source_conflicts"]
         assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 409
+        client.put(f"/api/projects/{pid}/storyboard", headers=headers, json={
+            "shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "Car passes between two rivals."}],
+        })
+        revised_project = client.get(f"/api/projects/{pid}").json()
+        assert revised_project["review"] is None
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers=headers)
+        assert client.post(f"/api/projects/{pid}/reviews", headers=headers).status_code == 200
 
 
 def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):

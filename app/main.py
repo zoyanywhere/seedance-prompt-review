@@ -118,7 +118,10 @@ def get_project(db: Session, project_id: int, user: User) -> Project:
 def project_data(db: Session, project: Project) -> dict:
     media = list(db.scalars(select(Media).where(Media.project_id == project.id).order_by(Media.id)))
     previews = list(db.scalars(select(Preview).where(Preview.project_id == project.id, Preview.storyboard_version == project.storyboard_version).order_by(Preview.id)))
-    review = db.scalar(select(Review).where(Review.project_id == project.id).order_by(Review.id.desc()))
+    review = db.scalar(select(Review).where(
+        Review.project_id == project.id,
+        Review.storyboard_version == project.storyboard_version,
+    ).order_by(Review.id.desc()))
     usage = list(db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)))
     return {
         "id": project.id, "title": project.title, "brief": project.brief, "must_haves": project.must_haves,
@@ -614,7 +617,9 @@ def start_review(project_id: int, background: BackgroundTasks,
         raise HTTPException(422, errors)
     prior = db.scalar(select(Review).where(Review.project_id == project.id).order_by(Review.id.desc()))
     prior_gate = (prior.findings or {}).get("quality_gate", {}) if prior else {}
-    if prior and prior.status == "needs_changes" and prior_gate.get("source_conflicts"):
+    if (prior and prior.status == "needs_changes"
+            and prior.storyboard_version == project.storyboard_version
+            and prior_gate.get("source_conflicts")):
         raise HTTPException(409, "Reference media conflicts with a required storyboard event. Change the source or storyboard before another paid review.")
     audit_only = bool(prior and prior.status == "needs_changes"
                       and prior.storyboard_version == project.storyboard_version
