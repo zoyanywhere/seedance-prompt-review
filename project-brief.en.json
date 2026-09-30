@@ -8,7 +8,7 @@
       "Admin-created one-time invitation links, account login, server-side sessions, CSRF protection",
       "Creator projects with brief, output settings, and private image/video/audio references",
       "Storyboard drafting, creator editing and approval, optional AI preview images with separate approval",
-      "LangGraph prompt review with specialists, Opus challenge, Sol supervisor, Astra escalation, deterministic linter",
+      "LangGraph prompt review with specialists, Opus challenge, Sol supervisor, Astra escalation, and a deterministic linter gate with bounded rechecks",
       "Per-call token and estimated cost ledger with round and full-run totals",
       "Docker Compose application and PostgreSQL with non-root application process and restricted networking",
       "Automated tests and dependency, container, and basic secret checks in CI"
@@ -169,7 +169,7 @@
       "no hard linter error",
       "creator approval of final prompt"
     ],
-    "limits": "Hard maximum review rounds, timeout, and cost ceiling; unresolved work is reported rather than treated as success",
+    "limits": "Default maximum of three review rounds (configurable from two to five), timeout, and cost ceiling; major or critical findings, prompt changes, and linter errors require another review or block approval at the limit",
     "quality_claim": "Review cannot guarantee generated video quality"
   },
   "usage_dashboard": {
@@ -217,11 +217,12 @@
       "Invitation-only account creation, secure sessions, role-based project access, and server-side authorization checks",
       "CSRF protection where cookie sessions are used, rate limits for login/invites/uploads/reviews, and audit events",
       "Strict media type and size validation, isolated processing, safe filenames, and no public media URLs by default",
+      "Before public deployment, scan uploaded files with an isolated antivirus service and fail closed when scanning is unavailable; antivirus does not replace safe decoding or prompt-injection boundaries",
       "API keys and session secrets injected at runtime, never baked into images, logged, or returned to browsers",
       "Per-review cost and concurrency ceilings to limit accidental API spend"
     ],
     "updates": {
-      "dependency_bot": "Weekly Dependabot pull requests for Python, Node, Docker base images, and GitHub Actions",
+      "dependency_bot": "Weekly Dependabot pull requests for Python, Docker base images, and GitHub Actions; automatic merge is allowed only after required CI jobs pass on the tested head commit",
       "ci_gates": "Dependency audit, container vulnerability scan, secret scan, lint, tests, and build before merge",
       "deployment_policy": "Build reviewed updates into new immutable images and redeploy with rollback; do not silently upgrade containers on startup",
       "urgent_fixes": "Prioritize critical security advisories and document upgrade ownership"

@@ -1,0 +1,29 @@
+name: Dependabot auto-merge
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  merge:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge for successful Dependabot pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PRS_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for number in $(jq -r '.[].number' <<< "$PRS_JSON"); do
+            pr=$(gh pr view "$number" --repo "$REPO" --json author,state)
+            author=$(jq -r '.author.login' <<< "$pr")
+            state=$(jq -r '.state' <<< "$pr")
+            if [[ "$author" == 'dependabot[bot]' && "$state" == 'OPEN' ]]; then
+              gh pr merge "$number" --repo "$REPO" --auto --merge
+            fi
+          done

@@ -17,9 +17,9 @@ An invitation-only web application for reviewing Seedance 2.5 prompts **before**
 7. GPT-6 Sol supervises revisions. Unresolved critical conflicts are escalated to GPT-6 Astra. A deterministic Seedance linter checks structural rules.
 8. Creators review the findings, remaining risks, and final prompt before approval.
 
-The review loop has a hard round limit and a cost ceiling. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
+The review loop defaults to three rounds (`MAX_REVIEW_ROUNDS`, allowed range 2–5) and has a cost ceiling. A changed prompt, major or critical finding, or linter error requires another independent review. If the limit is reached with unresolved issues, approval stays closed; persistent critical conflicts are escalated to Astra. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
 
-Creator instructions and uploaded references have priority over generated storyboard previews. Image generation is optional and starts only for selected shots or a creator-requested batch. Gemini 3.1 Flash Image is the initial candidate, pending access, pricing, and quality checks. The dashboard includes preview generation costs. Creators approve, replace, or reject previews before reviewers use them; previews are not automatically sent to Seedance as reference assets.
+Creator instructions and uploaded references have priority over generated storyboard previews. Image generation is optional and starts only for selected shots or a creator-requested batch. Gemini 3.1 Flash Image is the initial candidate, pending access, pricing, and quality checks. The dashboard includes preview generation costs. Creators approve, replace, or reject previews before reviewers use them; rejection deletes the preview file while keeping its cost record. Previews are not automatically sent to Seedance as reference assets.
 
 ## Run locally
 
@@ -41,7 +41,7 @@ Run checks with `python -m pytest -q` and `node --check app/static/app.js`. The 
 - Admins create one-time invitation links in the dashboard and send them manually. Passwords use Argon2id; sessions are server-side and use secure, HTTP-only cookies with CSRF protection.
 - Each project belongs to one user. API routes check ownership or administrator access before returning briefs, reviews, or media. Shared-project roles are not implemented yet.
 - Image, video, and audio uploads are validated and stored on the server. Gemini visual/audio specialists receive relevant uploaded media; other agents receive images and explicit metadata. Generated storyboard previews are stored separately from source references and enter review only after creator approval.
-- The review runs in the application process with a maximum of two specialist rounds. A restart marks interrupted reviews as failed so they can be rerun. A durable worker queue and database migrations are planned before multi-instance production deployment.
+- The review runs in the application process with three specialist rounds by default. A restart marks interrupted reviews as failed so they can be rerun. A durable worker queue and database migrations are planned before multi-instance production deployment.
 - The usage ledger records provider-reported tokens and a versioned rate estimate. The pre-call budget uses a conservative heuristic; actual invoices can differ for multimodal inputs, retries, and provider price changes. Preview images use an initial 1K-image estimate of about $0.067 each.
 
 No model call starts just by opening a project. Creators explicitly trigger storyboard drafting, optional preview images, and prompt review.
@@ -64,6 +64,8 @@ The complete workflow must work on desktop and mobile. On phones, brief entry, r
 
 Configurable media retention, account/project sharing, durable background workers, and database migrations are follow-up implementation work before production deployment. The current server/domain deployment remains undecided.
 
+Before accepting public-server uploads, add an isolated antivirus scanner (for example ClamAV) that scans every file before storage and fails closed when unavailable. Current limits, content inspection, private storage, and container restrictions remain in place. Antivirus signatures cannot detect prompt injection in a brief or media; agents must treat embedded text and speech in references as untrusted source content, and media decoders still need isolation and updates.
+
 See [the machine-readable project brief](project-brief.en.json) for roles, gates, and source boundaries.
 
 ## Seedance-specific constraints
@@ -79,3 +81,5 @@ Never commit `.env`, API keys, uploaded media, or user prompts. Use `.env.exampl
 The app image uses a multi-stage build and version-pinned Python base image. The app runs as a dedicated non-root user with a read-only root filesystem, an explicit media volume, dropped Linux capabilities, `no-new-privileges`, a health check, and resource limits. PostgreSQL is reachable only on an internal network. The app listens on the host loopback interface, ready for a TLS reverse proxy at deployment. Containers do not receive the Docker socket or privileged mode.
 
 Dependencies and base images receive weekly Dependabot update PRs. CI checks builds, tests, dependency advisories, container vulnerabilities, and obvious accidental secrets. Production upgrades should use reviewed immutable images with a rollback path; application containers do not silently self-update at startup. See the [project brief](project-brief.en.json) for the full security and maintenance requirements.
+
+Dependabot PRs can auto-merge after both required CI jobs (`test` and `container`) pass for the current PR head. Branch protection must require those checks; the auto-merge workflow does not check out or execute PR code with write permissions.

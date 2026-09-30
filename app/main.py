@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from .db import Invitation, LoginSession, Media, Preview, Project, Review, SessionLocal, Usage, User, init_db, utcnow
 from .providers import MEDIA_ROOT, MODEL_IDS
 from .security import COOKIE_NAME, SECURE_COOKIES, SESSION_HOURS, current_user, digest, get_db, hash_password, new_login, require_admin, require_csrf, throttle, token, verify_password
-from .workflow import generate_storyboard, run_review, validate_settings
+from .workflow import generate_storyboard, run_review, validate_settings, validate_storyboard
 
 STATIC_ROOT = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -469,9 +469,29 @@ def approve_preview(preview_id: int, user: User = Depends(require_csrf), db: Ses
     project = get_project(db, preview.project_id, user)
     if project.status != "storyboard_draft" or preview.storyboard_version != project.storyboard_version:
         raise HTTPException(409, "Preview does not match the current storyboard draft")
+    latest = db.scalar(select(Preview).where(Preview.project_id == project.id,
+                                             Preview.storyboard_version == project.storyboard_version,
+                                             Preview.shot_id == preview.shot_id).order_by(Preview.id.desc()))
+    if latest.id != preview.id:
+        raise HTTPException(409, "Only the latest preview for a shot can be approved")
     preview.approved = True
     db.commit()
     return {"approved": True}
+
+
+@app.delete("/api/previews/{preview_id}")
+def reject_preview(preview_id: int, user: User = Depends(require_csrf), db: Session = Depends(get_db)):
+    preview = db.get(Preview, preview_id)
+    if not preview:
+        raise HTTPException(404, "Preview not found")
+    project = get_project(db, preview.project_id, user)
+    if project.status != "storyboard_draft" or preview.storyboard_version != project.storyboard_version:
+        raise HTTPException(409, "Only previews for the current draft can be rejected")
+    storage_path = MEDIA_ROOT / preview.storage_key
+    db.delete(preview)
+    db.commit()
+    storage_path.unlink(missing_ok=True)
+    return {"rejected": True}
 
 
 def _storyboard_task(project_id: int):
@@ -524,7 +544,7 @@ def approve_storyboard(project_id: int, user: User = Depends(require_csrf), db: 
     if project.status != "storyboard_draft" or not project.storyboard or not project.storyboard.get("shots"):
         raise HTTPException(409, "No storyboard draft to approve")
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
-    errors = validate_settings(project, media)
+    errors = validate_settings(project, media) + validate_storyboard(project, media)
     if errors:
         raise HTTPException(422, errors)
     project.storyboard_approved_at = utcnow()

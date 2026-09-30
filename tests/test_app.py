@@ -9,7 +9,7 @@ os.environ["SECURE_COOKIES"] = "false"
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.db import Base, SessionLocal, User, engine
+from app.db import Base, Preview, SessionLocal, User, engine
 from app.main import app
 from app.security import hash_password
 from app.providers import ModelResult
@@ -110,3 +110,99 @@ def test_task_specific_settings_rejected():
         response = client.post("/api/projects", json={"title": "Edit", "brief": "Change the first shot.", "task_type": "edit", "duration": 8, "ratio": "16:9"}, headers={"X-CSRF-Token": csrf})
         assert response.status_code == 422
         assert "adaptive" in str(response.json())
+
+
+def test_preview_rejection_removes_only_current_project_file():
+    with TestClient(app) as client:
+        csrf = signin(client)
+        project = client.post("/api/projects", json={"title": "Preview", "brief": "A test shot."},
+                              headers={"X-CSRF-Token": csrf}).json()
+        path = Path("data/test_media/rejected-preview.png")
+        path.write_bytes(b"preview")
+        with SessionLocal() as db:
+            item = Preview(project_id=project["id"], shot_id="shot-1", storyboard_version=0,
+                           storage_key=path.name, mime="image/png", model="test", approved=False)
+            db.add(item)
+            db.commit()
+            preview_id = item.id
+        assert client.delete(f"/api/previews/{preview_id}", headers={"X-CSRF-Token": csrf}).status_code == 409
+        with SessionLocal() as db:
+            db.get(Preview, preview_id).storyboard_version = 1
+            db.commit()
+        client.put(f"/api/projects/{project['id']}/storyboard",
+                   json={"shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "A test shot."}]},
+                   headers={"X-CSRF-Token": csrf})
+        with SessionLocal() as db:
+            db.get(Preview, preview_id).storyboard_version = 1
+            db.commit()
+        assert client.delete(f"/api/previews/{preview_id}", headers={"X-CSRF-Token": csrf}).status_code == 200
+        assert not path.exists()
+        assert client.get(f"/api/previews/{preview_id}/content").status_code == 404
+
+
+def test_serious_finding_requires_reviewed_revision(monkeypatch):
+    rounds = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        if phase == "prompt_draft":
+            return ModelResult('{"prompt":"A fox walks across snow."}')
+        if phase == "action_timing":
+            rounds.append(phase)
+            return ModelResult('{"findings":[{"severity":"major","message":"Timing is missing"}]}' if len(rounds) == 1 else '{"findings":[]}')
+        if phase in {"camera_visuals", "audio_dialogue", "continuity", "challenge_review"}:
+            return ModelResult('{"findings":[]}')
+        if phase == "supervisor":
+            text = "A fox walks across snow in 0–8 seconds."
+            return ModelResult('{"prompt":' + __import__("json").dumps(text) + ',"unresolved_critical":false,"needs_recheck":false,"risks":[]}')
+        raise AssertionError(phase)
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        project = client.post("/api/projects", json={"title": "Review", "brief": "A fox on snow."},
+                              headers={"X-CSRF-Token": csrf}).json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/storyboard",
+                   json={"shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "A fox walks across snow."}]},
+                   headers={"X-CSRF-Token": csrf})
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers={"X-CSRF-Token": csrf})
+        response = client.post(f"/api/projects/{pid}/reviews", json={"budget_usd": 5}, headers={"X-CSRF-Token": csrf})
+        assert response.status_code == 200
+        current = client.get(f"/api/projects/{pid}").json()
+        assert current["review"]["status"] == "ready_for_approval"
+        assert current["review"]["findings"]["rounds"] == 2
+
+
+def test_persistent_critical_finding_blocks_approval_and_escalates(monkeypatch):
+    called = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        called.append(phase)
+        if phase == "prompt_draft":
+            return ModelResult('{"prompt":"A fox changes identity mid-shot."}')
+        if phase == "continuity":
+            return ModelResult('{"findings":[{"severity":"critical","message":"Identity changes mid-shot"}]}')
+        if phase in {"action_timing", "camera_visuals", "audio_dialogue", "challenge_review"}:
+            return ModelResult('{"findings":[]}')
+        if phase == "supervisor":
+            return ModelResult('{"prompt":"A fox changes identity mid-shot.","unresolved_critical":true,"needs_recheck":true,"risks":["Identity conflict"]}')
+        if phase == "critical_escalation":
+            return ModelResult('{"resolved":false,"reason":"Creator decision required","risks":["Identity conflict"]}')
+        raise AssertionError(phase)
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        project = client.post("/api/projects", json={"title": "Critical", "brief": "A fox in snow."},
+                              headers={"X-CSRF-Token": csrf}).json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/storyboard",
+                   json={"shots": [{"id": "shot-1", "time_window": "0-8s", "visible_action": "A fox in snow."}]},
+                   headers={"X-CSRF-Token": csrf})
+        client.post(f"/api/projects/{pid}/storyboard/approve", headers={"X-CSRF-Token": csrf})
+        assert client.post(f"/api/projects/{pid}/reviews", json={"budget_usd": 5}, headers={"X-CSRF-Token": csrf}).status_code == 200
+        current = client.get(f"/api/projects/{pid}").json()
+        assert current["review"]["status"] == "needs_changes"
+        assert current["review"]["findings"]["rounds"] == 3
+        assert called.count("critical_escalation") == 1
+        assert client.post(f"/api/projects/{pid}/prompt/approve", headers={"X-CSRF-Token": csrf}).status_code == 409
