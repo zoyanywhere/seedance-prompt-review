@@ -275,7 +275,8 @@ def test_persistent_critical_finding_blocks_approval_and_escalates(monkeypatch):
         assert client.post(f"/api/projects/{pid}/reviews", json={"budget_usd": 5}, headers={"X-CSRF-Token": csrf}).status_code == 200
         current = client.get(f"/api/projects/{pid}").json()
         assert current["review"]["status"] == "needs_changes"
-        assert current["review"]["findings"]["rounds"] == 3
+        assert current["review"]["findings"]["rounds"] == 1
+        assert called.count("continuity") == 1
         assert called.count("critical_escalation") == 1
         assert client.post(f"/api/projects/{pid}/prompt/approve", headers={"X-CSRF-Token": csrf}).status_code == 409
 
