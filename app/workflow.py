@@ -382,9 +382,39 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
     def route(state: ReviewState) -> str:
         if state["gate"]["must_recheck"] and state["round"] < MAX_REVIEW_ROUNDS:
             return "recheck"
+        if state["gate"]["must_recheck"]:
+            return "final_verification"
         if state["gate"]["critical"]:
             return "critical_escalation"
         return "end"
+
+    def final_verification(state: ReviewState) -> ReviewState:
+        """Check a last-round revision before using older findings to block it."""
+        value = record_call(db, project, "final_verification", (
+            "Independently audit this FINAL revised Seedance 2.5 prompt against the creator context, "
+            "approved storyboard, and previous specialist findings. The prior findings were written for an "
+            "OLDER prompt: report only major or critical problems that still exist in the final text. "
+            "Do not repeat a finding already fixed. Treat model output uncertainty (such as guaranteed exact "
+            "frames or perfect generated lettering) as a residual risk, not a prompt defect, when the final "
+            "prompt gives a concrete production fallback. Return JSON "
+            "{findings:[{severity:critical|major,message,shot_id,evidence,suggestion}],verdict}. "
+            "A clean findings list means this targeted audit found no remaining blocker; do not claim "
+            "that video generation is guaranteed.\nCONTEXT:\n" + context +
+            "\nPRIOR FINDINGS:\n" + json.dumps({**state["findings"], "challenge_review": state["challenge"]}, ensure_ascii=False) +
+            "\nFINAL PROMPT:\n" + state["prompt"]
+        ), [m for m in media if m.kind == "image"], review=review, max_output=1800, round_number=state["round"])
+        result = _findings(value)
+        serious = [f for f in result["findings"] if f["severity"] in {"critical", "major"}]
+        critical = bool(state["supervisor"].get("unresolved_critical")) or any(
+            f["severity"] == "critical" for f in serious)
+        findings = {**state["findings"], "final_verification": result}
+        gate = {**state["gate"], "serious_findings": serious, "critical": critical,
+                "must_recheck": False,
+                "ready": not serious and not critical and state["linter"]["passed"]}
+        return {"findings": findings, "gate": gate}
+
+    def route_after_verification(state: ReviewState) -> str:
+        return "critical_escalation" if state["gate"]["critical"] else "end"
 
     def escalate(state: ReviewState) -> ReviewState:
         value = record_call(db, project, "critical_escalation", (
@@ -408,6 +438,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
     graph.add_node("challenge", challenge)
     graph.add_node("supervisor", supervisor)
     graph.add_node("critical_escalation", escalate)
+    graph.add_node("final_verification", final_verification)
     graph.add_node("lint", lint)
     graph.add_node("recheck", recheck)
     graph.add_edge(START, "draft")
@@ -418,7 +449,9 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
     graph.add_edge(sequence[-1], "challenge")
     graph.add_edge("challenge", "supervisor")
     graph.add_edge("supervisor", "lint")
-    graph.add_conditional_edges("lint", route, {"critical_escalation": "critical_escalation", "recheck": "recheck", "end": END})
+    graph.add_conditional_edges("lint", route, {"critical_escalation": "critical_escalation", "final_verification": "final_verification", "recheck": "recheck", "end": END})
+    graph.add_conditional_edges("final_verification", route_after_verification,
+                                {"critical_escalation": "critical_escalation", "end": END})
     graph.add_edge("critical_escalation", END)
     graph.add_edge("recheck", sequence[0])
     return graph.compile()
@@ -487,4 +520,55 @@ def run_review(db: Session, project: Project, media: list[Media], review: Review
         review.error = f"{type(exc).__name__}: {exc}"[:1000]
         review.completed_at = utcnow()
         project.status = "storyboard_approved"
+        db.commit()
+
+
+def audit_prior_revision(db: Session, project: Project, media: list[Media],
+                         prior: Review, review: Review) -> None:
+    """Audit a supervisor's last revision without repeating the whole agent team."""
+    try:
+        if (prior.project_id != project.id or prior.storyboard_version != project.storyboard_version
+                or not project.storyboard_approved_at or not prior.final_prompt):
+            raise ValueError("Prior review no longer matches the approved storyboard")
+        context = project_context(project, media)
+        previous = prior.findings or {}
+        prior_findings = {phase: previous[phase] for phase in (*SPECIALISTS, "challenge_review")
+                          if phase in previous}
+        value = record_call(db, project, "final_verification", (
+            "Independently audit this FINAL revised Seedance 2.5 prompt against the creator context, "
+            "approved storyboard, and previous specialist findings. Those findings were written for an "
+            "OLDER prompt: report only major or critical defects that still exist in the final text. "
+            "Do not repeat a finding already fixed. Treat inherent video-output uncertainty as a residual "
+            "risk when the prompt gives a concrete production fallback. Return JSON "
+            "{findings:[{severity:critical|major,message,shot_id,evidence,suggestion}],verdict}. "
+            "A clean list means this targeted audit found no remaining prompt blocker, not that the video "
+            "is guaranteed.\nCONTEXT:\n" + context +
+            "\nPRIOR FINDINGS:\n" + json.dumps(prior_findings, ensure_ascii=False) +
+            "\nFINAL PROMPT:\n" + prior.final_prompt
+        ), [m for m in media if m.kind == "image"], review=review, max_output=1800,
+            round_number=int(previous.get("rounds", 1)))
+        result = _findings(value)
+        serious = [f for f in result["findings"] if f["severity"] in {"critical", "major"}]
+        critical = bool(previous.get("supervisor", {}).get("unresolved_critical")) or any(
+            f["severity"] == "critical" for f in serious)
+        linter = lint_prompt(project, prior.final_prompt, media)
+        gate = {"serious_findings": serious, "critical": critical, "must_recheck": False,
+                "round_limit_reached": True,
+                "ready": not serious and not critical and linter["passed"]}
+        review.findings = {**previous, "final_verification": result, "quality_gate": gate}
+        review.linter = linter
+        review.final_prompt = prior.final_prompt
+        review.status = "ready_for_approval" if gate["ready"] else "needs_changes"
+        review.phase = "complete"
+        review.completed_at = utcnow()
+        project.prompt = prior.final_prompt
+        project.prompt_approved_at = None
+        project.status = review.status
+        db.commit()
+    except Exception as exc:
+        review.status = "failed"
+        review.phase = "failed"
+        review.error = f"{type(exc).__name__}: {exc}"[:1000]
+        review.completed_at = utcnow()
+        project.status = "needs_changes"
         db.commit()

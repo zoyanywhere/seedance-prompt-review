@@ -8,7 +8,7 @@
       "Admin-created one-time invitation links, account login, server-side sessions, CSRF protection",
       "Creator projects with brief, output settings, and private image/video/audio references",
       "Storyboard drafting, creator editing and approval, optional AI preview images with separate approval",
-      "LangGraph prompt review with specialists, Opus challenge, Sol supervisor, Astra escalation, and a deterministic linter gate with bounded rechecks",
+      "LangGraph prompt review with specialists, Sol challenge, Sol supervisor, Astra escalation, and a deterministic linter gate with bounded rechecks",
       "Per-call token and estimated cost ledger with round and full-run totals",
       "Docker Compose application and PostgreSQL with non-root application process and restricted networking",
       "Automated tests and dependency, container, and basic secret checks in CI"
@@ -134,7 +134,7 @@
     },
     {
       "id": "challenge_review",
-      "model": "claude-opus-5-5",
+      "model": "gpt-6-sol",
       "position": "independent review after specialists and before supervisor",
       "task": "Challenge all approved inputs and specialist findings for cross-modal conflicts and blind spots",
       "effort_start": "medium"
