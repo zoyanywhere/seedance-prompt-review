@@ -227,3 +227,28 @@ def test_persistent_critical_finding_blocks_approval_and_escalates(monkeypatch):
         assert current["review"]["findings"]["rounds"] == 3
         assert called.count("critical_escalation") == 1
         assert client.post(f"/api/projects/{pid}/prompt/approve", headers={"X-CSRF-Token": csrf}).status_code == 409
+
+
+def test_invalid_model_json_is_retried_and_both_calls_are_recorded(monkeypatch):
+    from app.db import Project, Usage
+    from app.workflow import record_call
+
+    prompts = []
+
+    def fake_model(phase, prompt, media, **kwargs):
+        prompts.append(prompt)
+        body = '{"findings":[' if len(prompts) == 1 else '{"findings":[],"verdict":"clear"}'
+        return ModelResult(body, input_tokens=100, output_tokens=40, model="claude-opus-5-5")
+
+    monkeypatch.setattr("app.workflow.call_model", fake_model)
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == "admin@example.test"))
+        project = Project(owner_id=user.id, title="JSON retry", brief="A simple scene")
+        db.add(project)
+        db.commit()
+        result = record_call(db, project, "challenge_review", "Review this prompt", [])
+        rows = db.scalars(select(Usage).where(Usage.project_id == project.id).order_by(Usage.id)).all()
+    assert result == {"findings": [], "verdict": "clear"}
+    assert len(prompts) == 2 and "invalid JSON" in prompts[1]
+    assert [row.status for row in rows] == ["invalid_json", "completed"]
+    assert all(row.estimated_cost_usd is not None for row in rows)

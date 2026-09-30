@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 import os
 from datetime import datetime
 from types import SimpleNamespace
@@ -52,7 +53,7 @@ def project_context(project: Project, media: list[Media]) -> str:
     }, ensure_ascii=False)
 
 
-def record_call(db: Session, project: Project, phase: str, prompt: str, media: list[Media], *, review: Review | None = None, max_output: int = 2200, round_number: int = 0) -> Any:
+def record_call(db: Session, project: Project, phase: str, prompt: str, media: list[Media], *, review: Review | None = None, max_output: int = 2200, round_number: int = 0, json_retry: bool = True) -> Any:
     model = MODEL_IDS[phase]
     if review:
         spent = db.scalar(select(func.coalesce(func.sum(Usage.estimated_cost_usd), 0)).where(Usage.review_id == review.id)) or 0
@@ -77,12 +78,27 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
         usage.attempts = result.attempts
         billable_output = result.output_tokens + (result.reasoning_tokens if usage.model.startswith("gemini-") else 0)
         usage.estimated_cost_usd = estimate_cost(usage.model, result.input_tokens, billable_output, result.cached_tokens)
+        try:
+            value = parse_json(result.text)
+        except (JSONDecodeError, ValueError) as exc:
+            usage.status = "invalid_json"
+            db.commit()
+            if not json_retry:
+                raise ValueError(f"{phase} returned invalid JSON after one retry") from exc
+            retry_prompt = (
+                prompt + "\n\nYour previous response could not be parsed as JSON. "
+                "Regenerate the complete answer as one compact valid JSON object. "
+                "Use no markdown, commentary, or trailing commas. Limit findings to the six most material issues."
+            )
+            return record_call(db, project, phase, retry_prompt, media, review=review,
+                               max_output=max_output, round_number=round_number, json_retry=False)
         usage.status = "completed"
         db.commit()
-        return parse_json(result.text)
+        return value
     except Exception:
-        usage.status = "failed"
-        db.commit()
+        if usage.status == "running":
+            usage.status = "failed"
+            db.commit()
         raise
 
 
@@ -231,7 +247,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
                 "You are an independent Seedance 2.5 specialist. " + SPECIALISTS[phase] + " "
                 "Review the prompt against the creator context and approved storyboard. "
                 "Return JSON {findings:[{severity:critical|major|minor,message,shot_id,evidence,suggestion}],verdict}. "
-                "Report only concrete supported issues; do not silently alter creator instructions.\nCONTEXT:\n" + context +
+                "Report at most six concise, concrete supported issues; do not silently alter creator instructions.\nCONTEXT:\n" + context +
                 "\nPROMPT:\n" + state["prompt"]
             ), (media + preview_media) if phase in {"camera_visuals", "audio_dialogue"} else ([m for m in media if m.kind == "image"] + preview_media), review=review, round_number=state["round"])
             findings = dict(state.get("findings", {}))
@@ -245,7 +261,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         value = record_call(db, project, "challenge_review", (
             "You are an independent challenge reviewer, positioned after four specialists and before the supervisor. "
             "Check the entire creator context, approved storyboard, all references, current prompt, and specialist findings. "
-            "Find cross-modal contradictions and omissions. Do not approve changes. "
+            "Find at most six concise cross-modal contradictions or omissions. Do not approve changes. "
             "Return JSON {findings:[{severity,message,shot_id,evidence,suggestion}],verdict}.\nCONTEXT:\n" + context +
             "\nPROMPT:\n" + state["prompt"] + "\nSPECIALISTS:\n" + json.dumps(state["findings"], ensure_ascii=False)
         ), [m for m in media if m.kind == "image"] + preview_media, review=review, max_output=2800, round_number=state["round"])
