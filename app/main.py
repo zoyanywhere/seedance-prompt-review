@@ -25,6 +25,7 @@ from .workflow import generate_storyboard, run_review, validate_settings, valida
 
 STATIC_ROOT = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+PREVIEW_ESTIMATED_COST_USD = 0.067
 
 
 @asynccontextmanager
@@ -38,6 +39,11 @@ async def lifespan(_app: FastAPI):
             review.phase = "interrupted"
             review.error = "Review interrupted by server restart; start a new review."
             review.completed_at = utcnow()
+        for project in db.scalars(select(Project).where(Project.status == "preview_running")):
+            job = {**(project.storyboard or {}).get("_preview_job", {}), "status": "interrupted",
+                   "error": "Image generation stopped when the server restarted. You can start it again."}
+            project.storyboard = {**(project.storyboard or {}), "_preview_job": job}
+            project.status = "storyboard_draft"
         db.commit()
     yield
 
@@ -87,10 +93,6 @@ class StoryboardIn(BaseModel):
     open_questions: list[str] = []
 
 
-class ReviewIn(BaseModel):
-    budget_usd: float = Field(default=5.0, ge=0.10, le=100.0)
-
-
 class MediaRoleIn(BaseModel):
     role: str = Field(min_length=3, max_length=300)
 
@@ -121,7 +123,10 @@ def project_data(db: Session, project: Project) -> dict:
     return {
         "id": project.id, "title": project.title, "brief": project.brief, "must_haves": project.must_haves,
         "task_type": project.task_type, "duration": project.duration, "resolution": project.resolution,
-        "ratio": project.ratio, "storyboard": project.storyboard, "storyboard_version": project.storyboard_version,
+        "ratio": project.ratio,
+        "storyboard": {k: v for k, v in (project.storyboard or {}).items() if not k.startswith("_")} if project.storyboard else None,
+        "preview_progress": (project.storyboard or {}).get("_preview_job"),
+        "storyboard_version": project.storyboard_version,
         "storyboard_approved": bool(project.storyboard_approved_at), "prompt": project.prompt,
         "prompt_approved": bool(project.prompt_approved_at), "status": project.status,
         "media": [{"id": m.id, "filename": m.filename, "kind": m.kind, "mime": m.mime, "role": m.role,
@@ -383,16 +388,28 @@ def preview_content(preview_id: int, user: User = Depends(current_user), db: Ses
     return FileResponse(path, media_type=preview.mime, headers={"Cache-Control": "private, no-store"})
 
 
+def _update_preview_progress(db: Session, project: Project, **changes) -> None:
+    current = (project.storyboard or {}).get("_preview_job", {})
+    project.storyboard = {**(project.storyboard or {}), "_preview_job": {**current, **changes}}
+    db.commit()
+
+
 def _preview_task(project_id: int, shot_ids: list[str], expected_version: int):
     from google import genai
     from PIL import Image
     with SessionLocal() as db:
         project = db.get(Project, project_id)
         media = list(db.scalars(select(Media).where(Media.project_id == project_id)))
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-        for shot_id in shot_ids:
+        try:
+            client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        except Exception as exc:
+            project.status = "storyboard_draft"
+            _update_preview_progress(db, project, status="failed", error=f"{type(exc).__name__}: {exc}"[:500])
+            return
+        for index, shot_id in enumerate(shot_ids, start=1):
             if project.storyboard_version != expected_version or project.status != "preview_running":
                 break
+            _update_preview_progress(db, project, current_index=index, current_shot=shot_id)
             shot = next((x for x in project.storyboard.get("shots", []) if str(x.get("id")) == shot_id), None)
             if not shot:
                 continue
@@ -406,7 +423,8 @@ def _preview_task(project_id: int, shot_ids: list[str], expected_version: int):
             parts = [{"type": "text", "text": prompt}]
             for image in images:
                 parts.append({"type": "image", "data": base64.b64encode((MEDIA_ROOT / image.storage_key).read_bytes()).decode("ascii"), "mime_type": image.mime})
-            usage = Usage(project_id=project_id, phase="preview", model=MODEL_IDS["preview"], status="running")
+            usage = Usage(project_id=project_id, phase="preview", model=MODEL_IDS["preview"],
+                          estimated_cost_usd=PREVIEW_ESTIMATED_COST_USD, status="running")
             db.add(usage)
             db.commit()
             try:
@@ -431,19 +449,22 @@ def _preview_task(project_id: int, shot_ids: list[str], expected_version: int):
                                                                 Preview.shot_id == shot_id,
                                                                 Preview.id != preview.id)):
                     older.approved = False
-                usage.estimated_cost_usd = 0.067
                 usage.status = "completed"
                 db.commit()
+                job = (project.storyboard or {}).get("_preview_job", {})
+                _update_preview_progress(db, project, completed=index,
+                                         completed_shot_ids=[*job.get("completed_shot_ids", []), shot_id])
             except Exception as exc:
                 usage.status = "failed"
                 db.commit()
                 project.status = "storyboard_draft"
-                project.storyboard = {**project.storyboard, "preview_error": f"{type(exc).__name__}: {exc}"[:500]}
-                db.commit()
+                error = f"{type(exc).__name__}: {exc}"[:500]
+                project.storyboard = {**project.storyboard, "preview_error": error}
+                _update_preview_progress(db, project, status="failed", error=error)
                 return
         if project.status == "preview_running":
             project.status = "storyboard_draft"
-            db.commit()
+            _update_preview_progress(db, project, status="completed", current_shot=None)
 
 
 @app.post("/api/projects/{project_id}/previews")
@@ -455,10 +476,14 @@ def generate_previews(project_id: int, body: PreviewIn, background: BackgroundTa
     valid_ids = {str(shot.get("id")) for shot in project.storyboard.get("shots", [])}
     if len(set(body.shot_ids)) != len(body.shot_ids) or not set(body.shot_ids).issubset(valid_ids):
         raise HTTPException(422, "Unknown or duplicate shot ID")
+    job = {"status": "running", "total": len(body.shot_ids), "completed": 0,
+           "current_index": 0, "current_shot": None, "completed_shot_ids": [],
+           "estimated_total_usd": round(len(body.shot_ids) * PREVIEW_ESTIMATED_COST_USD, 3)}
+    project.storyboard = {**project.storyboard, "_preview_job": job}
     project.status = "preview_running"
     db.commit()
     background.add_task(_preview_task, project.id, body.shot_ids, project.storyboard_version)
-    return {"status": "preview_running", "estimated_cost_usd": round(len(body.shot_ids) * 0.067, 3)}
+    return {"status": "preview_running", "preview_progress": job}
 
 
 @app.post("/api/previews/{preview_id}/approve")
@@ -509,7 +534,7 @@ def _storyboard_task(project_id: int):
 @app.post("/api/projects/{project_id}/storyboard/generate")
 def start_storyboard(project_id: int, background: BackgroundTasks, user: User = Depends(require_csrf), db: Session = Depends(get_db)):
     project = get_project(db, project_id, user)
-    if project.status in {"review_running", "storyboard_running"}:
+    if project.status in {"review_running", "storyboard_running", "preview_running"}:
         raise HTTPException(409, "A workflow is already running")
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
     errors = validate_settings(project, media)
@@ -524,7 +549,7 @@ def start_storyboard(project_id: int, background: BackgroundTasks, user: User = 
 @app.put("/api/projects/{project_id}/storyboard")
 def save_storyboard(project_id: int, body: StoryboardIn, user: User = Depends(require_csrf), db: Session = Depends(get_db)):
     project = get_project(db, project_id, user)
-    if project.status in {"review_running", "storyboard_running"}:
+    if project.status in {"review_running", "storyboard_running", "preview_running"}:
         raise HTTPException(409, "Workflow is running")
     ids = [str(shot.get("id", "")) for shot in body.shots]
     if any(not shot_id for shot_id in ids) or len(ids) != len(set(ids)):
@@ -562,7 +587,7 @@ def _review_task(project_id: int, review_id: int):
 
 
 @app.post("/api/projects/{project_id}/reviews")
-def start_review(project_id: int, body: ReviewIn, background: BackgroundTasks,
+def start_review(project_id: int, background: BackgroundTasks,
                  user: User = Depends(require_csrf), db: Session = Depends(get_db)):
     project = get_project(db, project_id, user)
     if project.status != "storyboard_approved" or not project.storyboard_approved_at:
@@ -572,7 +597,7 @@ def start_review(project_id: int, body: ReviewIn, background: BackgroundTasks,
     if errors:
         raise HTTPException(422, errors)
     review = Review(project_id=project.id, storyboard_version=project.storyboard_version,
-                    budget_usd=body.budget_usd, status="running")
+                    budget_usd=max(0.10, min(100.0, float(os.getenv("DEFAULT_REVIEW_BUDGET_USD", "5")))), status="running")
     db.add(review)
     project.status = "review_running"
     db.commit()
