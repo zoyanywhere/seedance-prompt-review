@@ -1,4 +1,5 @@
 import json
+import hashlib
 from json import JSONDecodeError
 import os
 from datetime import datetime
@@ -58,7 +59,7 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
     # Gemini counts reasoning toward max_output_tokens. Multimodal specialist calls
     # need headroom for both reasoning and a complete JSON findings object.
     if phase in {"camera_visuals", "audio_dialogue"} and model.startswith("gemini-"):
-        max_output = max(max_output, 8192)
+        max_output = max(max_output, 16384)
     # Sonnet/Opus findings can exceed the old 2200-token cap, especially with
     # six findings. A capped reply is incomplete JSON even when retried.
     if phase in {"continuity", "challenge_review"} and model.startswith("claude-"):
@@ -94,13 +95,14 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
             if not json_retry:
                 finish = f" (provider finish reason: {result.finish_reason})" if result.finish_reason else ""
                 raise ValueError(f"{phase} returned invalid JSON after one retry{finish}") from exc
+            retry_max_output = min(max_output * 2, 32768) if result.finish_reason.upper() == "MAX_TOKENS" else max_output
             retry_prompt = (
                 prompt + "\n\nYour previous response could not be parsed as JSON. "
                 "Regenerate the complete answer as one compact valid JSON object. "
                 "Use no markdown, commentary, or trailing commas. Limit findings to the six most material issues."
             )
             return record_call(db, project, phase, retry_prompt, media, review=review,
-                               max_output=max_output, round_number=round_number, json_retry=False)
+                               max_output=retry_max_output, round_number=round_number, json_retry=False)
         usage.status = "completed"
         db.commit()
         return value
@@ -245,6 +247,19 @@ SPECIALISTS = {
 }
 
 
+def review_checkpoint_signature(db: Session, project: Project, media: list[Media]) -> str:
+    previews = list(db.scalars(select(Preview).where(
+        Preview.project_id == project.id,
+        Preview.storyboard_version == project.storyboard_version,
+        Preview.approved.is_(True),
+    ).order_by(Preview.id)))
+    payload = json.dumps({
+        "context": project_context(project, sorted(media, key=lambda item: item.id)),
+        "approved_previews": [(item.id, item.shot_id, item.source_media_ids) for item in previews],
+    }, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def build_review_graph(db: Session, project: Project, media: list[Media], review: Review):
     approved_previews = list(db.scalars(select(Preview).where(
         Preview.project_id == project.id,
@@ -259,8 +274,18 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
     context = project_context(project, media) + "\nAPPROVED_AI_PREVIEWS (lower authority): " + json.dumps([
         {"shot_id": x.shot_id, "preview_id": x.id, "source_media_ids": x.source_media_ids} for x in approved_previews
     ])
+    signature = review_checkpoint_signature(db, project, media)
+
+    def checkpoint(prompt: str, round_number: int, findings: dict[str, Any]) -> None:
+        review.findings = {**findings, "_checkpoint": {
+            "signature": signature, "round": round_number, "prompt": prompt,
+        }}
+        db.commit()
 
     def draft(state: ReviewState) -> ReviewState:
+        if state.get("prompt") and state.get("round") == 1:
+            checkpoint(state["prompt"], 1, state.get("findings", {}))
+            return {"prompt": state["prompt"], "round": 1, "findings": state.get("findings", {})}
         value = record_call(db, project, "prompt_draft", (
             "Write a concrete Seedance 2.5 prompt strictly bound to this approved storyboard. "
             "Return JSON with key prompt. Include ordered visible actions, camera, audio, and reference IDs. "
@@ -268,10 +293,13 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         ), [m for m in media if m.kind == "image"], review=review, max_output=3000, round_number=1)
         if not isinstance(value, dict) or not isinstance(value.get("prompt"), str):
             raise ValueError("Prompt draft was invalid")
+        checkpoint(value["prompt"], 1, {})
         return {"prompt": value["prompt"], "round": 1, "findings": {}}
 
     def specialist(phase: str):
         def run(state: ReviewState) -> ReviewState:
+            if phase in state.get("findings", {}):
+                return {"findings": state["findings"]}
             value = record_call(db, project, phase, (
                 "You are an independent Seedance 2.5 specialist. " + SPECIALISTS[phase] + " "
                 "Review the prompt against the creator context and approved storyboard. "
@@ -281,8 +309,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
             ), (media + preview_media) if phase in {"camera_visuals", "audio_dialogue"} else ([m for m in media if m.kind == "image"] + preview_media), review=review, round_number=state["round"])
             findings = dict(state.get("findings", {}))
             findings[phase] = _findings(value)
-            review.findings = findings
-            db.commit()
+            checkpoint(state["prompt"], state["round"], findings)
             return {"findings": findings}
         return run
 
@@ -295,8 +322,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
             "\nPROMPT:\n" + state["prompt"] + "\nSPECIALISTS:\n" + json.dumps(state["findings"], ensure_ascii=False)
         ), [m for m in media if m.kind == "image"] + preview_media, review=review, max_output=2800, round_number=state["round"])
         result = _findings(value)
-        review.findings = {**state["findings"], "challenge_review": result}
-        db.commit()
+        checkpoint(state["prompt"], state["round"], {**state["findings"], "challenge_review": result})
         return {"challenge": result}
 
     def supervisor(state: ReviewState) -> ReviewState:
@@ -346,6 +372,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         return {"escalation": value}
 
     def recheck(state: ReviewState) -> ReviewState:
+        checkpoint(state["prompt"], state["round"] + 1, {})
         return {"round": state["round"] + 1, "findings": {}}
 
     graph = StateGraph(ReviewState)
@@ -373,7 +400,27 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
 
 def run_review(db: Session, project: Project, media: list[Media], review: Review) -> None:
     try:
-        state = build_review_graph(db, project, media, review).invoke({}, {"recursion_limit": 30})
+        signature = review_checkpoint_signature(db, project, media)
+        initial: ReviewState = {}
+        previous = db.scalars(select(Review).where(
+            Review.project_id == project.id,
+            Review.storyboard_version == project.storyboard_version,
+            Review.status == "failed",
+            Review.id < review.id,
+        ).order_by(Review.id.desc()))
+        for prior in previous:
+            saved = prior.findings or {}
+            checkpoint_data = saved.get("_checkpoint", {})
+            if (checkpoint_data.get("signature") == signature
+                    and checkpoint_data.get("round") == 1
+                    and isinstance(checkpoint_data.get("prompt"), str)
+                    and checkpoint_data["prompt"].strip()):
+                initial = {
+                    "prompt": checkpoint_data["prompt"], "round": 1,
+                    "findings": {phase: saved[phase] for phase in SPECIALISTS if phase in saved},
+                }
+                break
+        state = build_review_graph(db, project, media, review).invoke(initial, {"recursion_limit": 30})
         prompt = state["prompt"]
         linter = state["linter"]
         supervisor = state.get("supervisor", {})

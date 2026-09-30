@@ -173,10 +173,14 @@ def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, 
                     raise TimeoutError(f"Media processing timed out for {item.filename}")
                 uploaded.append(remote.name)
                 parts.append(remote)
+            thinking = (types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
+                        if phase in {"camera_visuals", "audio_dialogue"} else None)
             response = client.models.generate_content(
                 model=model,
                 contents=parts,
-                config=types.GenerateContentConfig(max_output_tokens=max_output_tokens, response_mime_type="application/json"),
+                config=types.GenerateContentConfig(max_output_tokens=max_output_tokens,
+                                                   response_mime_type="application/json",
+                                                   thinking_config=thinking),
             )
             usage = response.usage_metadata
             candidates = response.candidates or []
