@@ -153,6 +153,7 @@ def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, 
             usage.input_tokens or 0,
             usage.output_tokens or 0,
             getattr(usage, "cache_read_input_tokens", 0) or 0,
+            finish_reason=response.stop_reason or "",
         )
     if model.startswith("gemini-"):
         client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
