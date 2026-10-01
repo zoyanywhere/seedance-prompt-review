@@ -17,11 +17,18 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements-dev.txt
       - name: Ensure FFmpeg is available
+        timeout-minutes: 3
         run: |
           if ! command -v ffmpeg >/dev/null; then
-            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
-            sudo apt-get install -y --no-install-recommends ffmpeg
+            # Refresh Ubuntu sources only; unrelated runner vendor feeds can stall.
+            sources=/etc/apt/sources.list.d/ubuntu.sources
+            if [[ ! -f "$sources" ]]; then sources=/etc/apt/sources.list; fi
+            apt_options=(-o "Dir::Etc::sourcelist=$sources" -o 'Dir::Etc::sourceparts=-'
+                         -o Acquire::Retries=1 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15)
+            sudo apt-get "${apt_options[@]}" update
+            sudo apt-get "${apt_options[@]}" install -y --no-install-recommends ffmpeg
           fi
+          ffmpeg -version | head -n 1
       - run: python -m compileall -q app
       - run: python -m pytest -q
       - run: python scripts/check_secrets.py
