@@ -21,3 +21,16 @@ RUN mkdir -p /app/data/media && chown -R app:app /app/data
 USER 10001:10001
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "127.0.0.1"]
+
+# CI uses the actual runtime, including FFmpeg, without Ubuntu runner installs.
+FROM runtime AS test
+USER root
+COPY requirements-dev.txt .
+RUN python -m ensurepip && python -m pip install --no-cache-dir -r requirements-dev.txt
+COPY tests ./tests
+RUN mkdir -p /app/data/test_media && chown -R app:app /app/data
+USER 10001:10001
+CMD ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+
+# Default builds retain only the production runtime, without test dependencies.
+FROM runtime AS production
