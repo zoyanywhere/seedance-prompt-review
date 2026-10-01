@@ -1,6 +1,6 @@
 {
   "schema_version": "1.7",
-  "updated_at": "2026-09-29",
+  "updated_at": "2026-10-01",
   "status": "First working application version implemented; video concept and server deployment to follow",
   "implementation": {
     "implemented": [
@@ -106,17 +106,17 @@
     },
     {
       "id": "storyboard",
-      "model": "gpt-6-sol",
+      "model": "gpt-6.1-sol",
       "task": "Draft shot-by-shot storyboard and preview directions"
     },
     {
       "id": "prompt_draft",
-      "model": "gpt-6-sol",
+      "model": "gpt-6.1-sol",
       "task": "Create a Seedance prompt bound to the approved storyboard and media roles"
     },
     {
       "id": "action_timing",
-      "model": "gpt-6-sol",
+      "model": "gpt-6.1-sol",
       "task": "Independently review shot order, visible actions, timing, and end states"
     },
     {
@@ -138,14 +138,14 @@
     },
     {
       "id": "challenge_review",
-      "model": "gpt-6-sol",
+      "model": "gpt-6.1-sol",
       "position": "independent review after specialists and before supervisor",
       "task": "Challenge all approved inputs and specialist findings for cross-modal conflicts and blind spots",
       "effort_start": "medium"
     },
     {
       "id": "supervisor",
-      "model": "gpt-6-sol",
+      "model": "gpt-6.1-sol",
       "task": "Resolve findings, request targeted rechecks, revise the prompt, and document risks"
     },
     {
@@ -254,7 +254,17 @@
       "claude-opus-5-5",
       "gemini-3.8-flash"
     ],
-    "limitation": "Listing visibility does not prove successful inference or sufficient quota"
+    "limitation": "Listing visibility does not prove successful inference or sufficient quota",
+    "latest_check": {
+      "checked_at": "2026-10-01",
+      "method": "Read-only provider model listing with local API keys; official model documentation",
+      "openai_target": "gpt-6.1-sol",
+      "openai_target_visible": true,
+      "gemini_4_visible": false,
+      "gemini_visual_audio_model": "gemini-3.8-flash",
+      "openai_model_documentation": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+      "google_model_documentation": "https://ai.google.dev/gemini-api/docs/models"
+    }
   },
   "open_items": [
     "Creator video concept after Ask YT discussion",
