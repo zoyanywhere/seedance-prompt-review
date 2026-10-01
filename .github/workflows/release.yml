@@ -44,22 +44,20 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          if [[ -n "$SSH_HOST" && -n "$SSH_USER" && -n "$SSH_PRIVATE_KEY" && -n "$SSH_KNOWN_HOSTS" && -n "$DEPLOY_PATH" ]]; then
+          if [[ -n "$SSH_HOST" && -n "$SSH_USER" && -n "$SSH_PRIVATE_KEY" && -n "$DEPLOY_PATH" ]]; then
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             echo 'Image published. Server deployment awaits SSH secrets and the server .env.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Deploy through verified SSH connection
+      - name: Deploy through SSH connection
         if: steps.deployment.outputs.ready == 'true'
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
@@ -71,7 +69,9 @@ jobs:
           umask 077
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # Discover the host key for this run; no independently pinned identity.
+          ssh-keyscan -T 15 -p "$port" -t ed25519,rsa "$SSH_HOST" > ~/.ssh/known_hosts
+          test -s ~/.ssh/known_hosts
           trap 'rm -f ~/.ssh/deploy_key' EXIT
           options=(-i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes)
           ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "mkdir -p '$DEPLOY_PATH/deploy'"
