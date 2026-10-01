@@ -13,7 +13,7 @@ The production Compose file is standalone. It publishes no host ports. Only the 
 1. Point the DNS A/AAAA records for `promptlab.zoyanywhere.com` at the server.
 2. Use the existing Docker/Traefik installation and `web-network`. Reserve at least 4 GB for ClamAV in addition to app/database/OS memory.
 3. Create a separate deployment directory, for example `/opt/promptlab`. Copy `.env.example` to its private `.env` and fill in API keys and a strong PostgreSQL password. Set `TRUSTED_PROXY_IPS` to the actual Traefik address or a dedicated trusted proxy subnet. Keep `.env` readable only by the deployment account. Do not commit it.
-4. The SSH deployment account needs Docker access. Configure GitHub repository secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `DEPLOY_PATH`, and optionally `SSH_PORT` (defaults to 22). Obtain the known-hosts entry from a trusted server fingerprint. Host-key checking is mandatory. Use a distinct `DEPLOY_PATH` from the website.
+4. The SSH deployment account needs Docker access. Configure GitHub repository secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `DEPLOY_PATH`, and optionally `SSH_PORT` (defaults to 22). The workflow discovers host keys with `ssh-keyscan` at the start of each deployment; no `SSH_KNOWN_HOSTS` secret is needed. SSH checks against these discovered keys, but the initial server identity is not independently verified. Use a distinct `DEPLOY_PATH` from the website.
 5. Make the GHCR package public for anonymous server pulls, or log the server into GHCR once with a read-packages token. Registry credentials and provider keys stay on the server.
 
 ## Delivery pipeline
