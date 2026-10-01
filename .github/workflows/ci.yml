@@ -33,6 +33,7 @@ jobs:
         run: |
           cp .env.example .env
           POSTGRES_PASSWORD=ci-only APP_IMAGE=seedance-review:test docker compose -f compose.production.yaml config --quiet
+          POSTGRES_PASSWORD=ci-only APP_IMAGE=seedance-review:test docker compose -f compose.production.yaml config --format json | python -c 'import json,sys; assert json.load(sys.stdin)["services"]["app"]["tmpfs"] == ["/tmp:size=128m,noexec,nosuid,nodev"]'
       - run: |
           docker image inspect seedance-review:test --format '{{.Config.User}}' | grep -x '10001:10001'
       - uses: aquasecurity/trivy-action@v0.36.0
