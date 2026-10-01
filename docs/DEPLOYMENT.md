@@ -42,3 +42,7 @@ Persist PostgreSQL and media volumes. Keep encrypted off-server backups and test
 Uploads require authenticated project ownership and pass file-type, size, pixel and duration checks. Files remain private to their project. Antivirus scanning was removed at the creator's request to fit the 1-GB host; uploads are not malware-scanned.
 
 Keep images, dependencies and media decoders updated. Validation does not detect every malicious file or decoder exploit. Prompt text and media remain untrusted data for agents.
+
+## Image retention
+
+After a healthy deployment, the script removes older tags belonging only to `ghcr.io/zoyanywhere/seedance-prompt-review` and verifies that the current release is the sole remaining tag. Cleanup uses no force flag and does not prune other repositories, containers or volumes. The prior release remains available during startup failure recovery; after successful cleanup, a later rollback requires pulling its commit tag from GHCR again.
