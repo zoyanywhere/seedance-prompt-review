@@ -18,7 +18,7 @@ The production Compose file is standalone. It publishes no host ports. Only the 
 
 ## Delivery pipeline
 
-Pull requests run tests, secret checks, dependency auditing, a non-root image check and Trivy scanning. Production Compose is validated in CI. Main pushes and manual runs of **Release and deploy** run these checks again before publishing `ghcr.io/zoyanywhere/seedance-prompt-review:<commit-sha>`. Deployment uses that commit tag, never `latest`.
+Pull requests run tests inside the non-root application runtime, using its installed FFmpeg instead of installing media tools on the Ubuntu runner. A separate test build stage supplies test dependencies; the default production image excludes them. CI also runs secret checks, dependency auditing, a non-root image check and Trivy scanning. Production Compose is validated in CI. Main pushes and manual runs of **Release and deploy** run these checks again before publishing `ghcr.io/zoyanywhere/seedance-prompt-review:<commit-sha>`. Deployment uses that commit tag, never `latest`.
 
 Without SSH secrets, the workflow publishes the image and explicitly reports that server deployment is pending. Once configured, it copies the Compose file and deployment script, pulls images, saves a database backup for an existing installation, then waits for all services to become healthy. Initial ClamAV signature downloads can take several minutes. A failed update restores the previous app image when available; database schema changes are not automatically reversed.
 

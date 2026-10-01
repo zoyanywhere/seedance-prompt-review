@@ -16,21 +16,11 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: python -m pip install -r requirements-dev.txt
-      - name: Ensure FFmpeg is available
-        timeout-minutes: 3
-        run: |
-          if ! command -v ffmpeg >/dev/null; then
-            # Refresh Ubuntu sources only; unrelated runner vendor feeds can stall.
-            sources=/etc/apt/sources.list.d/ubuntu.sources
-            if [[ ! -f "$sources" ]]; then sources=/etc/apt/sources.list; fi
-            apt_options=(-o "Dir::Etc::sourcelist=$sources" -o 'Dir::Etc::sourceparts=-'
-                         -o Acquire::Retries=1 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15)
-            sudo apt-get "${apt_options[@]}" update
-            sudo apt-get "${apt_options[@]}" install -y --no-install-recommends ffmpeg
-          fi
-          ffmpeg -version | head -n 1
+      - name: Build runtime test image with FFmpeg
+        run: docker build --pull --target test --tag seedance-review:tests .
       - run: python -m compileall -q app
-      - run: python -m pytest -q
+      - name: Test inside the non-root application runtime
+        run: docker run --rm --network none seedance-review:tests
       - run: python scripts/check_secrets.py
       - run: pip-audit -r requirements.txt
   container:

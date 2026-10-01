@@ -1,8 +1,8 @@
 .git
 .env
+.env.*
 .venv
 data
-tests
 work
 *.pyc
 __pycache__
