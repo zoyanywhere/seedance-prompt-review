@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, URL, create_engine
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, URL, create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 
@@ -75,6 +75,7 @@ class Project(Base):
     must_haves: Mapped[str] = mapped_column(Text, default="")
     task_type: Mapped[str] = mapped_column(String(40), default="text_to_video")
     duration: Mapped[int] = mapped_column(Integer, default=8)
+    duration_mode: Mapped[str] = mapped_column(String(12), default="agent", server_default="fixed")
     resolution: Mapped[str] = mapped_column(String(10), default="720p")
     ratio: Mapped[str] = mapped_column(String(20), default="16:9")
     storyboard: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -143,6 +144,7 @@ class Usage(Base):
     round_number: Mapped[int] = mapped_column(Integer, default=0)
     model: Mapped[str] = mapped_column(String(80))
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    effort: Mapped[str] = mapped_column(String(16), default="", server_default="")
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     cached_tokens: Mapped[int] = mapped_column(Integer, default=0)
     reasoning_tokens: Mapped[int] = mapped_column(Integer, default=0)
@@ -154,6 +156,14 @@ class Usage(Base):
 
 def init_db() -> None:
     Base.metadata.create_all(engine)
+    # Additive compatibility upgrade; existing project durations remain fixed.
+    with engine.begin() as connection:
+        for table, column, declaration in (
+            ("projects", "duration_mode", "VARCHAR(12) NOT NULL DEFAULT 'fixed'"),
+            ("usage", "effort", "VARCHAR(16) NOT NULL DEFAULT ''"),
+        ):
+            if column not in {c["name"] for c in inspect(connection).get_columns(table)}:
+                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}"))
 
 
 @contextmanager

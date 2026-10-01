@@ -12,6 +12,7 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: python -m pip install -r requirements-dev.txt
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: python -m compileall -q app
       - run: python -m pytest -q
       - run: python scripts/check_secrets.py

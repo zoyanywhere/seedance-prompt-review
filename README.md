@@ -4,27 +4,28 @@ An invitation-only web application for reviewing Seedance 2.5 prompts **before**
 
 > Status: first working application version. BytePlus video generation remains outside this release. Server/domain deployment and the creator video concept will follow later.
 
-![Agent architecture and workflow](agent-architecture-en.svg)
+![Target agent architecture and workflow](agent-architecture-en.svg)
+
+The diagram shows the implemented quality-first workflow. See [the architecture specification](ARCHITECTURE.md) for model roles, evidence handling and operational limits. Video-output quality still requires evaluation on real generated videos.
 
 ## Workflow
 
-1. Human creators provide the brief, must-have requirements, optional image/video/audio references, target duration, resolution, and aspect ratio.
-2. A deterministic validator checks media and task-specific BytePlus constraints. GPT-6 Luna structures the creator brief; GPT-6.1 Sol drafts a shot-by-shot storyboard. Each shot gets a visual scene card from the brief and available references; creators can request AI-generated previews for selected shots or the whole storyboard after seeing an estimated cost.
-3. Creators edit and approve the storyboard, preview images, media roles, and output settings.
-4. GPT-6.1 Sol drafts a prompt bound to that approved storyboard version.
-5. Four independent specialist reviews examine action/timing, camera/visuals, audio/dialogue, and continuity.
-6. GPT-6.1 Sol independently challenges the full context and specialist findings.
-7. GPT-6.1 Sol supervises revisions. Unresolved critical conflicts are escalated to GPT-6 Astra. A deterministic Seedance linter checks structural rules.
-8. Creators review the findings, remaining risks, and final prompt before approval. The final screen maps each uploaded file to its Seedance alias (`@Image1`, `@Video1`, `@Audio1`), in upload order within each media type.
-9. Creators copy the alias-based prompt, upload the listed files in the same order to their video studio, and set duration, aspect ratio, and resolution in the studio's separate controls. This release does not send files to BytePlus or another video studio.
+1. Creators provide intent, must-haves and optional image/video/audio references, plus resolution and aspect ratio. For new projects the director proposes a duration from 4–30 seconds; creators approve it with the storyboard. Existing fixed-duration projects retain their setting.
+2. Technical validation checks inputs. Gemini 3.8 Flash (high) analyzes references before planning; Sol 6.1 (high) cross-checks sampled video frames. Source observations are cached by source identity/role and shared downstream.
+3. Luna structures the original brief. Claude Opus 5.5 (high) develops direction, hook/payoff, purposeful creative rule breaks, shot timing and acceptance criteria. Continuous shot windows must add up to the proposed duration.
+4. Creators edit and approve the storyboard and optional image previews. Sol 6.1 (high) drafts the prompt from the approved plan and source evidence.
+5. Four specialists run in parallel: Sol action/timing/hook, Gemini visuals and audio, and Sonnet continuity. All use high effort and the same prompt version. Completed results are checkpointed so a failed first round can reuse them.
+6. GPT-6 Astra (high) repairs supported findings. Claude Opus 5.5 (high) checks the repaired prompt and explicitly closes each major finding with evidence. A clean list alone cannot erase earlier blockers. Supported intentional creative choices remain intact.
+7. Unresolved findings return to Astra within a bounded repair loop. Source conflicts, exhausted budgets and stalled unchanged prompts stop repetition. The linter checks settings and timing; creators approve the final result.
+8. Handoff maps files to `@ImageN`, `@VideoN` and `@AudioN` in upload order per media type. Upload those files to the external studio and set duration, ratio and resolution separately. This release does not generate BytePlus video.
 
-The review loop defaults to three rounds (`MAX_REVIEW_ROUNDS`, allowed range 2–5) and has a cost ceiling. Another specialist round runs only after the supervisor changes the prompt. A last-round revision receives one targeted GPT-6.1 Sol audit; older findings do not automatically block a corrected prompt. Existing blocked last-round revisions can request that audit without repeating the entire agent team. Major or critical defects in the final text still block approval; persistent critical conflicts are escalated to Astra. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
+`MAX_REVIEW_ROUNDS` bounds repair/audit rounds (default 3, range 2–5). `DEFAULT_REVIEW_BUDGET_USD` and `PREPARATION_BUDGET_USD` default to $5 each. Budget estimates reserve the entire parallel batch before dispatch; actual provider usage replaces each reservation. Failed calls with unknown billing retain a conservative reservation. Critical reviews retry the same model instead of silently falling back to a weaker one. These estimates cannot enforce an exact provider invoice cap.
 
 Creator instructions and uploaded references have priority over generated storyboard previews. Image generation is optional and starts only for selected shots or a creator-requested batch. Gemini 3.1 Flash Image is the initial candidate, pending access, pricing, and quality checks. The dashboard includes preview generation costs. Creators approve, replace, or reject previews before reviewers use them; rejection deletes the preview file while keeping its cost record. Previews are not automatically sent to Seedance as reference assets.
 
 ## Run locally
 
-The application uses Python 3.12, FastAPI, LangGraph, PostgreSQL in Docker, and a dependency-free browser frontend. Keep the existing `.env` with API keys private. Add a strong random `POSTGRES_PASSWORD` to it; `.env.example` lists all variables. Docker must be running.
+The application uses Python 3.14 in Docker (CI also checks Python 3.12), FastAPI, LangGraph, PostgreSQL in Docker, and a dependency-free browser frontend. Keep the existing `.env` with API keys private. Add a strong random `POSTGRES_PASSWORD` to it; `.env.example` lists all variables. Docker must be running.
 
 ```sh
 docker compose up --build -d
@@ -41,8 +42,8 @@ Run checks with `python -m pytest -q` and `node --check app/static/app.js`. The 
 
 - Admins create one-time invitation links in the dashboard and send them manually. Passwords use Argon2id; sessions are server-side and use secure, HTTP-only cookies with CSRF protection.
 - Each project belongs to one user. API routes check ownership or administrator access before returning briefs, reviews, or media. Shared-project roles are not implemented yet.
-- Image, video, and audio uploads are validated and stored on the server. Gemini visual/audio specialists receive relevant uploaded media; other agents receive images and explicit metadata. Generated storyboard previews are stored separately from source references and enter review only after creator approval.
-- The review runs in the application process with three specialist rounds by default. A restart marks interrupted reviews as failed so they can be rerun. A durable worker queue and database migrations are planned before multi-instance production deployment.
+- Image, video, and audio uploads are validated and stored on the server. Gemini receives uploaded media and timestamped video frames. Other agents receive images, sampled frames and shared source observations. Frames are private temporary derivatives, not additional Seedance references. Generated storyboard previews are stored separately from source references and enter review only after creator approval.
+- The review runs in the application process with one parallel specialist pass and up to three repair/audit rounds by default. A restart marks interrupted reviews as failed so they can be rerun. A durable worker queue and a full migration framework are planned before multi-instance production deployment. Startup currently performs two additive column upgrades, preserving existing fixed durations.
 - The usage ledger records provider-reported tokens and a versioned rate estimate. The pre-call budget uses a conservative heuristic; actual invoices can differ for multimodal inputs, retries, and provider price changes. Preview images use an initial 1K-image estimate of about $0.067 each.
 
 No model call starts just by opening a project. Creators explicitly trigger storyboard drafting, optional preview images, and prompt review.
@@ -58,7 +59,7 @@ The complete workflow must work on desktop and mobile. On phones, brief entry, r
 ## Implementation and later phases
 
 - LangGraph for the bounded review graph; the application database stores storyboard versions, reviews, usage, and human approval decisions.
-- OpenAI GPT-6 Luna, GPT-6.1 Sol, and GPT-6 Astra; Anthropic Claude Sonnet 5.5; Google Gemini 3.8 Flash. Transient Gemini 3.8 overloads are retried, then routed to Gemini 3.5 Flash and 3.5 Flash-Lite if needed; the actual successful model and attempt count appear in usage records. Google currently limits Gemini 2.5 access for new users.
+- OpenAI GPT-6 Luna, GPT-6.1 Sol and GPT-6 Astra; Anthropic Claude Opus 5.5 and Sonnet 5.5; Google Gemini 3.8 Flash. Model and effort settings are recorded for each call.
 - Docker deployment, invitation-only accounts, project ownership checks, server-side API keys, and private local media storage. Admins create expiring invitation links and send them manually.
 - A usage dashboard showing input, output, cache, and reasoning tokens where available; estimated cost per call, agent, round, and complete review; and pre-call budget checks.
 - BytePlus Seedance 2.5 API integration in a later phase.

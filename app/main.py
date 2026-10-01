@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
+from typing import Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse
@@ -22,6 +23,8 @@ from .db import Invitation, LoginSession, Media, Preview, Project, Review, Sessi
 from .providers import MEDIA_ROOT, MODEL_IDS
 from .security import COOKIE_NAME, SECURE_COOKIES, SESSION_HOURS, current_user, digest, get_db, hash_password, new_login, require_admin, require_csrf, throttle, token, verify_password
 from .workflow import audit_prior_revision, generate_storyboard, normalize_storyboard_references, run_review, validate_settings, validate_storyboard
+from .workflow import PIPELINE_VERSION
+from .evidence import source_signature
 
 STATIC_ROOT = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -44,6 +47,11 @@ async def lifespan(_app: FastAPI):
                    "error": "Image generation stopped when the server restarted. You can start it again."}
             project.storyboard = {**(project.storyboard or {}), "_preview_job": job}
             project.status = "storyboard_draft"
+        for project in db.scalars(select(Project).where(Project.status == "storyboard_running")):
+            project.status = "storyboard_failed"
+            project.storyboard = {**(project.storyboard or {}), "error": "Preparation interrupted. Generate the storyboard again to resume saved media analysis."}
+        for usage in db.scalars(select(Usage).where(Usage.status == "running")):
+            usage.status = "interrupted_unknown"
         db.commit()
     yield
 
@@ -84,6 +92,7 @@ class ProjectIn(BaseModel):
     must_haves: str = Field(default="", max_length=5000)
     task_type: str = "text_to_video"
     duration: int = 8
+    duration_mode: Literal["agent", "fixed"] = "agent"
     resolution: str = "720p"
     ratio: str = "16:9"
 
@@ -126,6 +135,8 @@ def project_data(db: Session, project: Project) -> dict:
     return {
         "id": project.id, "title": project.title, "brief": project.brief, "must_haves": project.must_haves,
         "task_type": project.task_type, "duration": project.duration, "resolution": project.resolution,
+        "duration_mode": project.duration_mode,
+        "preparation_phase": (project.storyboard or {}).get("_preparation_phase"),
         "ratio": project.ratio,
         "storyboard": {k: v for k, v in (project.storyboard or {}).items() if not k.startswith("_")} if project.storyboard else None,
         "preview_progress": (project.storyboard or {}).get("_preview_job"),
@@ -139,7 +150,7 @@ def project_data(db: Session, project: Project) -> dict:
                       "estimated_cost_usd": x.estimated_cost_usd, "source_media_ids": x.source_media_ids,
                       "url": f"/api/previews/{x.id}/content"} for x in previews],
         "review": review_data(review) if review else None,
-        "usage": [{"review_id": x.review_id, "phase": x.phase, "round": x.round_number, "model": x.model, "input_tokens": x.input_tokens,
+        "usage": [{"review_id": x.review_id, "phase": x.phase, "round": x.round_number, "model": x.model, "effort": x.effort, "input_tokens": x.input_tokens,
                    "output_tokens": x.output_tokens, "cached_tokens": x.cached_tokens,
                    "reasoning_tokens": x.reasoning_tokens, "attempts": x.attempts, "estimated_cost_usd": x.estimated_cost_usd,
                    "status": x.status} for x in usage],
@@ -536,7 +547,7 @@ def _storyboard_task(project_id: int):
             generate_storyboard(db, project, media)
         except Exception as exc:
             project.status = "storyboard_failed"
-            project.storyboard = {"error": f"{type(exc).__name__}: {exc}"[:500]}
+            project.storyboard = {**(project.storyboard or {}), "error": f"{type(exc).__name__}: {exc}"[:500]}
             db.commit()
 
 
@@ -563,7 +574,7 @@ def save_storyboard(project_id: int, body: StoryboardIn, user: User = Depends(re
     ids = [str(shot.get("id", "")) for shot in body.shots]
     if any(not shot_id for shot_id in ids) or len(ids) != len(set(ids)):
         raise HTTPException(422, "Every shot needs a unique ID")
-    project.storyboard = normalize_storyboard_references(body.model_dump())
+    project.storyboard = normalize_storyboard_references({**(project.storyboard or {}), **body.model_dump()})
     project.storyboard_version += 1
     project.storyboard_approved_at = None
     project.prompt_approved_at = None
@@ -613,6 +624,9 @@ def start_review(project_id: int, background: BackgroundTasks,
         raise HTTPException(409, "Approve the storyboard before review")
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
     errors = validate_settings(project, media)
+    evidence = (project.storyboard or {}).get("_evidence", {})
+    if media and (evidence.get("signature") != source_signature(media) or evidence.get("version") != PIPELINE_VERSION):
+        errors.append("Generate and approve a new storyboard to analyze the current references before review")
     if errors:
         raise HTTPException(422, errors)
     prior = db.scalar(select(Review).where(Review.project_id == project.id).order_by(Review.id.desc()))
