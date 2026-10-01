@@ -33,3 +33,18 @@ fi
 umask 077
 printf 'APP_IMAGE=%s\n' "$image" > .release.env
 echo "Deployment healthy: $image"
+
+# Keep only this repository's healthy release on the deployment host.
+repository="ghcr.io/zoyanywhere/seedance-prompt-review"
+mapfile -t release_tags < <(docker image ls "$repository" --format '{{.Repository}}:{{.Tag}}')
+for old_image in "${release_tags[@]}"; do
+  [[ "$old_image" == "$image" || "$old_image" == "$repository:<none>" ]] && continue
+  [[ "$old_image" == "$repository:"* ]] || continue
+  docker image rm "$old_image"
+done
+mapfile -t retained_tags < <(docker image ls "$repository" --format '{{.Repository}}:{{.Tag}}')
+[[ "${#retained_tags[@]}" == 1 && "${retained_tags[0]}" == "$image" ]] || {
+  echo 'Promptlab image cleanup did not leave exactly the current release.' >&2
+  exit 1
+}
+echo "Retained Promptlab image: $image"
