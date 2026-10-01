@@ -18,18 +18,28 @@ MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", "./data/media"))
 
 MODEL_IDS = {
     "brief_intake": os.getenv("MODEL_BRIEF", "gpt-6-luna"),
-    "storyboard": os.getenv("MODEL_STORYBOARD", "gpt-6.1-sol"),
+    "media_analysis": os.getenv("MODEL_MEDIA_ANALYSIS", "gemini-3.8-flash"),
+    "critical_frame_check": os.getenv("MODEL_FRAME_CHECK", "gpt-6.1-sol"),
+    "storyboard": os.getenv("MODEL_STORYBOARD", "claude-opus-5-5"),
     "prompt_draft": os.getenv("MODEL_DRAFT", "gpt-6.1-sol"),
     "action_timing": os.getenv("MODEL_ACTION", "gpt-6.1-sol"),
     "camera_visuals": os.getenv("MODEL_VISUAL", "gemini-3.8-flash"),
     "audio_dialogue": os.getenv("MODEL_AUDIO", "gemini-3.8-flash"),
     "continuity": os.getenv("MODEL_CONTINUITY", "claude-sonnet-5-5"),
     "challenge_review": os.getenv("MODEL_CHALLENGE", "gpt-6.1-sol"),
-    "final_verification": os.getenv("MODEL_FINAL_VERIFICATION", "gpt-6.1-sol"),
-    "supervisor": os.getenv("MODEL_SUPERVISOR", "gpt-6.1-sol"),
+    "final_verification": os.getenv("MODEL_FINAL_VERIFICATION", "claude-opus-5-5"),
+    "supervisor": os.getenv("MODEL_SUPERVISOR", "gpt-6-astra"),
     "critical_escalation": os.getenv("MODEL_ESCALATION", "gpt-6-astra"),
     "preview": os.getenv("MODEL_PREVIEW", "gemini-3.1-flash-image"),
 }
+
+EFFORTS = {phase: os.getenv(f"EFFORT_{phase.upper()}", "medium" if phase == "brief_intake" else "high")
+           for phase in MODEL_IDS if phase != "preview"}
+
+
+def output_allowance(phase: str, requested: int) -> int:
+    # Reasoning consumes the output allowance too. Leave space for complete JSON.
+    return max(requested, 4096 if phase == "brief_intake" else 16384)
 
 # USD per million tokens, standard paid tier, checked 2026-09-29.
 # Keep this versioned table current before production deployment.
@@ -107,18 +117,7 @@ def call_model(phase: str, prompt: str, media: list[Media] | None = None, *, max
             if not transient:
                 raise
             if attempt == 3:
-                if primary_model != "gemini-3.8-flash":
-                    raise
-                for fallback_attempt, fallback in enumerate(("gemini-3.5-flash", "gemini-3.5-flash-lite"), start=4):
-                    try:
-                        result = _call_model_once(phase, prompt, media, max_output_tokens=max_output_tokens, model_override=fallback)
-                        result.attempts = fallback_attempt
-                        result.model = fallback
-                        return result
-                    except Exception as fallback_exc:
-                        fallback_status = getattr(fallback_exc, "status_code", None) or getattr(fallback_exc, "code", None)
-                        if fallback_attempt == 5 or fallback_status not in {408, 429, 500, 502, 503, 504}:
-                            raise
+                raise  # Never silently downgrade a quality-critical review.
             time.sleep(attempt * 2)
     raise RuntimeError("Model retry loop exhausted")
 
@@ -127,12 +126,16 @@ def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, 
     model = model_override or MODEL_IDS[phase]
     media = media or []
     if model.startswith("gpt-"):
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=90, max_retries=0)
+        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=300, max_retries=0)
         content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
         for item in _image_media(media):
             data = base64.b64encode(_read_media(item)).decode("ascii")
-            content.append({"type": "input_image", "image_url": f"data:{item.mime};base64,{data}", "detail": "low"})
-        response = client.responses.create(model=model, input=[{"role": "user", "content": content}], max_output_tokens=max_output_tokens, store=False)
+            content.append({"type": "input_text", "text": f"Source {item.id}: {item.filename}; role: {item.role}"})
+            content.append({"type": "input_image", "image_url": f"data:{item.mime};base64,{data}", "detail": "high"})
+        response = client.responses.create(model=model, input=[{"role": "user", "content": content}],
+                                          reasoning={"effort": EFFORTS[phase]},
+                                          text={"format": {"type": "json_object"}},
+                                          max_output_tokens=max_output_tokens, store=False)
         usage = response.usage
         details = getattr(usage, "input_tokens_details", None)
         out_details = getattr(usage, "output_tokens_details", None)
@@ -142,29 +145,34 @@ def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, 
             getattr(usage, "output_tokens", 0) or 0,
             getattr(details, "cached_tokens", 0) or 0,
             getattr(out_details, "reasoning_tokens", 0) or 0,
+            finish_reason=getattr(getattr(response, "incomplete_details", None), "reason", "") or "",
         )
     if model.startswith("claude-"):
-        client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=90, max_retries=0)
+        client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=300, max_retries=0)
         content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         for item in _image_media(media):
             data = base64.b64encode(_read_media(item)).decode("ascii")
+            content.append({"type": "text", "text": f"Source {item.id}: {item.filename}; role: {item.role}"})
             content.append({"type": "image", "source": {"type": "base64", "media_type": item.mime, "data": data}})
-        response = client.messages.create(model=model, max_tokens=max_output_tokens, messages=[{"role": "user", "content": content}])
+        response = client.messages.create(model=model, max_tokens=max_output_tokens,
+                                          thinking={"type": "adaptive"}, output_config={"effort": EFFORTS[phase]},
+                                          messages=[{"role": "user", "content": content}])
         usage = response.usage
         return ModelResult(
             "\n".join(block.text for block in response.content if getattr(block, "type", "") == "text"),
-            usage.input_tokens or 0,
+            (usage.input_tokens or 0) + (getattr(usage, "cache_read_input_tokens", 0) or 0),
             usage.output_tokens or 0,
             getattr(usage, "cache_read_input_tokens", 0) or 0,
             finish_reason=response.stop_reason or "",
         )
     if model.startswith("gemini-"):
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"], http_options={"timeout": 300000})
         parts: list[Any] = [prompt]
         uploaded = []
         try:
             for item in media:
                 remote = client.files.upload(file=MEDIA_ROOT / item.storage_key, config={"mime_type": item.mime})
+                uploaded.append(remote.name)
                 for _ in range(18):
                     if not remote.state or remote.state.name == "ACTIVE":
                         break
@@ -174,10 +182,9 @@ def _call_model_once(phase: str, prompt: str, media: list[Media] | None = None, 
                     remote = client.files.get(name=remote.name)
                 else:
                     raise TimeoutError(f"Media processing timed out for {item.filename}")
-                uploaded.append(remote.name)
+                parts.append(f"Source {item.id}: {item.filename}; role: {item.role}")
                 parts.append(remote)
-            thinking = (types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
-                        if phase in {"camera_visuals", "audio_dialogue"} else None)
+            thinking = types.ThinkingConfig(thinking_level=EFFORTS[phase].upper())
             response = client.models.generate_content(
                 model=model,
                 contents=parts,

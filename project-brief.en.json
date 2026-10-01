@@ -1,14 +1,14 @@
 {
   "schema_version": "1.7",
   "updated_at": "2026-10-01",
-  "status": "First working application version implemented; video concept and server deployment to follow",
+  "status": "Quality-first workflow implemented; production deployment and real-video outcome validation pending",
   "implementation": {
     "implemented": [
       "Responsive branded web interface with lightweight 3D accents",
       "Admin-created one-time invitation links, account login, server-side sessions, CSRF protection",
       "Creator projects with brief, output settings, and private image/video/audio references",
       "Storyboard drafting, creator editing and approval, optional AI preview images with separate approval",
-      "LangGraph prompt review with specialists, Sol challenge, Sol supervisor, Astra escalation, and a deterministic linter gate with bounded rechecks",
+      "LangGraph review with parallel specialists, Astra repair, mandatory Opus final audit, per-finding closure and bounded rechecks",
       "Per-call token and estimated cost ledger with round and full-run totals",
       "Docker Compose application and PostgreSQL with non-root application process and restricted networking",
       "Automated tests and dependency, container, and basic secret checks in CI"
@@ -43,7 +43,7 @@
       "videos",
       "audio"
     ],
-    "target_duration_seconds": "4-30 or automatic where task type allows",
+    "target_duration_seconds": "Agents propose 4-30 seconds for new text/reference projects; creator approves with storyboard. Legacy fixed settings preserved.",
     "resolution_options": [
       "480p",
       "720p",
@@ -102,66 +102,68 @@
     {
       "id": "brief_intake",
       "model": "gpt-6-luna",
-      "task": "Structure human creator input; mark missing or conflicting requirements without inventing decisions"
+      "effort": "medium",
+      "task": "Structure creator intent without changing must-haves"
+    },
+    {
+      "id": "media_analysis",
+      "model": "gemini-3.8-flash",
+      "effort": "high",
+      "task": "Timestamped image/video/audio observations and uncertainty before storyboard"
+    },
+    {
+      "id": "critical_frame_check",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "task": "Cross-check selected dense video frames for motion, identity and spatial relations"
     },
     {
       "id": "storyboard",
-      "model": "gpt-6.1-sol",
-      "task": "Draft shot-by-shot storyboard and preview directions"
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "task": "Artistic direction, dramaturgy, hook, motivated rule breaks and proposed 4-30s duration"
     },
     {
       "id": "prompt_draft",
       "model": "gpt-6.1-sol",
-      "task": "Create a Seedance prompt bound to the approved storyboard and media roles"
+      "effort": "high",
+      "task": "Translate approved shots into actionable Seedance instructions and media aliases"
     },
     {
       "id": "action_timing",
       "model": "gpt-6.1-sol",
-      "task": "Independently review shot order, visible actions, timing, and end states"
+      "effort": "high",
+      "task": "Independently check timing, causal clarity, hook and payoff"
     },
     {
       "id": "camera_visuals",
       "model": "gemini-3.8-flash",
-      "task": "Independently review visual references, framing, camera, lighting, and style"
+      "effort": "high",
+      "task": "Source fidelity, framing, camera movement and visual realism"
     },
     {
       "id": "audio_dialogue",
       "model": "gemini-3.8-flash",
-      "task": "Independently review audio references, speech, music, and time alignment"
+      "effort": "high",
+      "task": "Cinematic sound, speech intelligibility and audiovisual synchronization"
     },
     {
       "id": "continuity",
       "model": "claude-sonnet-5-5",
-      "task": "Independently review identity, objects, spatial continuity, and media bindings",
-      "effort_start": "high",
-      "output": "schema-validated findings"
-    },
-    {
-      "id": "challenge_review",
-      "model": "gpt-6.1-sol",
-      "position": "independent review after specialists and before supervisor",
-      "task": "Challenge all approved inputs and specialist findings for cross-modal conflicts and blind spots",
-      "effort_start": "medium"
+      "effort": "high",
+      "task": "Identity, state transitions and continuity; preserve intentional departures"
     },
     {
       "id": "supervisor",
-      "model": "gpt-6.1-sol",
-      "task": "Resolve findings, request targeted rechecks, revise the prompt, and document risks"
-    },
-    {
-      "id": "critical_escalation",
       "model": "gpt-6-astra",
-      "trigger": "Unresolved critical conflict or creator-requested final check for an especially costly generation"
+      "effort": "high",
+      "task": "Resolve supported findings and produce concrete repairs before final audit"
     },
     {
-      "id": "media_validator",
-      "model": null,
-      "task": "Deterministic media metadata and BytePlus constraint validation"
-    },
-    {
-      "id": "seedance_linter",
-      "model": null,
-      "task": "Deterministic prompt structure and timing checks"
+      "id": "final_verification",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "task": "Independently validate the repaired prompt against original brief, evidence and acceptance criteria"
     }
   ],
   "approval_gate": {
@@ -334,5 +336,111 @@
     "prompt_aliases": "Use @ImageN, @VideoN, and @AudioN in the copyable final prompt; number each media type separately in upload order.",
     "reference_files": "Show the matching original filename and role under the prompt. The creator uploads the files to the external video studio in that order; names or aliases alone do not attach media.",
     "settings": "Set duration, aspect ratio, and resolution in separate video-generation controls, not as a prompt header."
+  },
+  "quality_first_architecture_plan": {
+    "status": "implemented; automated tests cover workflow, real-video outcome validation pending",
+    "updated_at": "2026-10-01",
+    "objective": "A realistic, artistically intentional Seedance video that meets creator requirements on the first generation; optimize total cost per accepted video rather than cost per model call.",
+    "evaluation_context": "Video project evaluated by professors; not a master thesis. Academic process documentation is not required by this scope.",
+    "creative_policy": "Film principles guide decisions. Preserve deliberate, motivated departures from realism, continuity, rhythm or perspective. Distinguish creative intent from accidental errors; do not flatten originality into generic advertising.",
+    "duration": {
+      "selected_by": "agents propose; creator approves with storyboard",
+      "min_seconds": 4,
+      "max_seconds": 30,
+      "basis": [
+        "action and physical timing",
+        "perception and reading time",
+        "dramatic rhythm",
+        "transformation and payoff"
+      ],
+      "validation": "Shot durations sum to selected duration; export as a separate generation setting. This policy targets text/reference generation; other task types retain their provider constraints."
+    },
+    "roles": [
+      {
+        "phase": "brief_intake",
+        "model": "gpt-6-luna",
+        "purpose": "Structure creator intent without changing must-haves"
+      },
+      {
+        "phase": "media_analysis",
+        "model": "gemini-3.8-flash",
+        "effort": "high",
+        "purpose": "Timestamped image/video/audio observations and uncertainty before storyboard"
+      },
+      {
+        "phase": "critical_frame_check",
+        "model": "gpt-6.1-sol",
+        "effort": "high",
+        "purpose": "Cross-check selected dense video frames for motion, identity and spatial relations"
+      },
+      {
+        "phase": "storyboard",
+        "model": "claude-opus-5-5",
+        "effort": "high",
+        "purpose": "Artistic direction, dramaturgy, hook, motivated rule breaks and proposed 4-30s duration"
+      },
+      {
+        "phase": "prompt_draft",
+        "model": "gpt-6.1-sol",
+        "effort": "high",
+        "purpose": "Translate approved shots into actionable Seedance instructions and media aliases"
+      },
+      {
+        "phase": "action_timing",
+        "model": "gpt-6.1-sol",
+        "effort": "high",
+        "purpose": "Independently check timing, causal clarity, hook and payoff"
+      },
+      {
+        "phase": "camera_visuals",
+        "model": "gemini-3.8-flash",
+        "effort": "high",
+        "purpose": "Source fidelity, framing, camera movement and visual realism"
+      },
+      {
+        "phase": "audio_dialogue",
+        "model": "gemini-3.8-flash",
+        "effort": "high",
+        "purpose": "Cinematic sound, speech intelligibility and audiovisual synchronization"
+      },
+      {
+        "phase": "continuity",
+        "model": "claude-sonnet-5-5",
+        "effort": "high",
+        "purpose": "Identity, state transitions and continuity; preserve intentional departures"
+      },
+      {
+        "phase": "supervisor",
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "purpose": "Resolve supported findings and produce concrete repairs before final audit"
+      },
+      {
+        "phase": "final_verification",
+        "model": "claude-opus-5-5",
+        "effort": "high",
+        "purpose": "Independently validate the repaired prompt against original brief, evidence and acceptance criteria"
+      }
+    ],
+    "review_policy": "Parallel specialists use the same versioned evidence. Each major finding needs a specific repair and verified closure. Recheck affected constraints after edits; bound rounds and stop stalled repetition. Creator approves material changes to intent or approved storyboard.",
+    "quality_dimensions": [
+      "physical and temporal plausibility",
+      "artistic intention and originality",
+      "composition, montage and sound",
+      "hook, clarity and payoff",
+      "advertising message when relevant",
+      "source fidelity and explicit transformation states"
+    ],
+    "limits": [
+      "Virality cannot be guaranteed",
+      "Prompt approval does not guarantee video quality",
+      "Actual video evaluation is needed to measure first-pass success"
+    ],
+    "success_metrics": [
+      "creator requirements met on first generation",
+      "professor/creator assessment of film quality",
+      "regenerations per accepted video",
+      "total review and generation cost per accepted video"
+    ]
   }
 }
