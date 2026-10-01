@@ -7,6 +7,11 @@ test -f .env || { echo 'Create the private server .env first.' >&2; exit 1; }
 chmod 600 .env
 docker network inspect web-network >/dev/null
 docker info --format 'Docker resources: {{.NCPU}} CPU(s), {{.MemTotal}} bytes RAM'
+memory_bytes=$(docker info --format '{{.MemTotal}}')
+if (( memory_bytes < 3500000000 )); then
+  echo 'Insufficient server RAM for app, PostgreSQL and ClamAV. At least a 4 GB host is required; 8 GB is recommended for this shared stack. Upgrade the VM before retrying.' >&2
+  exit 1
+fi
 compose=(docker compose --project-name promptlab --env-file .env -f compose.production.yaml)
 previous=""
 if [[ -f .release.env ]]; then
