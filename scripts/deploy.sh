@@ -6,6 +6,7 @@ image="$2"
 test -f .env || { echo 'Create the private server .env first.' >&2; exit 1; }
 chmod 600 .env
 docker network inspect web-network >/dev/null
+docker info --format 'Docker resources: {{.NCPU}} CPU(s), {{.MemTotal}} bytes RAM'
 compose=(docker compose --project-name promptlab --env-file .env -f compose.production.yaml)
 previous=""
 if [[ -f .release.env ]]; then
