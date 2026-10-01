@@ -6,7 +6,7 @@ argon2-cffi==25.1.0
 python-multipart==0.0.32
 httpx==0.28.1
 langgraph==1.2.12
-openai==3.19.2
+openai==3.20.0
 anthropic==1.8.0
 google-genai==2.25.0
 Pillow==12.3.0
