@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.7",
+  "schema_version": "1.8",
   "updated_at": "2026-10-01",
-  "status": "Quality-first workflow implemented; production deployment and real-video outcome validation pending",
+  "status": "Quality-first workflow and production delivery configuration implemented; server rollout and real-video outcome validation pending",
   "implementation": {
     "implemented": [
       "Responsive branded web interface with lightweight 3D accents",
@@ -11,10 +11,12 @@
       "LangGraph review with parallel specialists, Astra repair, mandatory Opus final audit, per-finding closure and bounded rechecks",
       "Per-call token and estimated cost ledger with round and full-run totals",
       "Docker Compose application and PostgreSQL with non-root application process and restricted networking",
-      "Automated tests and dependency, container, and basic secret checks in CI"
+      "Automated tests and dependency, container, and basic secret checks in CI",
+      "Production Traefik routing, CI-gated commit-tagged GHCR publication, SSH deployment with health checks and previous-image rollback",
+      "Production ClamAV upload scanning before decoding and storage, fail-closed behavior, non-root scanner and PostgreSQL"
     ],
     "pending_before_public_deployment": [
-      "Production TLS reverse proxy, domain, backup and restore plan",
+      "Server DNS, SSH secrets and private environment setup; off-server backups and restore verification",
       "Database migrations and durable background workers",
       "Media deletion and configurable retention",
       "Live provider inference and image quality checks with the configured API accounts",
@@ -34,7 +36,8 @@
     "application_access": "invitation-only user accounts",
     "deployment": "Docker on a server",
     "generation_provider_later": "BytePlus Seedance 2.5 API",
-    "generation_in_initial_release": false
+    "generation_in_initial_release": false,
+    "application_url": "https://promptlab.zoyanywhere.com"
   },
   "creator_inputs": {
     "brief_and_must_haves": true,
@@ -442,5 +445,15 @@
       "regenerations per accepted video",
       "total review and generation cost per accepted video"
     ]
+  },
+  "production_delivery": {
+    "domain": "promptlab.zoyanywhere.com",
+    "reverse_proxy": "Existing Traefik websecure / myresolver on web-network",
+    "compose_file": "compose.production.yaml",
+    "image": "ghcr.io/zoyanywhere/seedance-prompt-review:<commit-sha>",
+    "upload_scanner": "ClamAV 1.5.4, non-root, required in production before media decoding/storage",
+    "database": "PostgreSQL 17.11, non-root production process",
+    "dependabot": "Weekly pip, Dockerfile, Docker Compose and GitHub Actions updates; tested-head auto-merge; PostgreSQL major updates excluded pending migration",
+    "live_deployment": "Pending user-managed server environment, DNS and repository SSH secrets"
   }
 }

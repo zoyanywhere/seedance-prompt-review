@@ -1,0 +1,87 @@
+services:
+  app:
+    image: ${APP_IMAGE:?Set APP_IMAGE to the published commit image}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: seedance
+      POSTGRES_DB: seedance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      MEDIA_ROOT: /app/data/media
+      SECURE_COOKIES: "true"
+      ANTIVIRUS_REQUIRED: "true"
+      CLAMD_HOST: clamav
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "${TRUSTED_PROXY_IPS:-127.0.0.1}"]
+    volumes: [media_data:/app/data/media]
+    read_only: true
+    tmpfs: [/tmp:size=256m,noexec,nosuid,nodev]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2.0
+    depends_on:
+      db: {condition: service_healthy}
+      clamav: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks: [internal, web-network]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: web-network
+      traefik.http.routers.promptlab.rule: Host(`${APP_DOMAIN:-promptlab.zoyanywhere.com}`)
+      traefik.http.routers.promptlab.entrypoints: websecure
+      traefik.http.routers.promptlab.tls.certresolver: myresolver
+      traefik.http.services.promptlab.loadbalancer.server.port: "8000"
+  db:
+    image: postgres:17.11-alpine3.23
+    user: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: seedance
+      POSTGRES_USER: seedance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seedance -d seedance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+  clamav:
+    image: clamav/clamav:1.5.4_base
+    user: clamav
+    entrypoint: /init-unprivileged
+    restart: unless-stopped
+    volumes:
+      - clamav_signatures:/var/lib/clamav
+      - ./deploy/clamd.conf:/etc/clamav/clamd.conf:ro
+    environment:
+      FRESHCLAM_CHECKS: "12"
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 4g
+    cpus: 2.0
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 300s
+      retries: 10
+    networks: [internal, updates]
+networks:
+  internal: {internal: true}
+  updates: {}
+  web-network: {external: true}
+volumes:
+  media_data:
+  postgres_data:
+  clamav_signatures:

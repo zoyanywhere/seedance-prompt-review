@@ -1,0 +1,81 @@
+name: Release and deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production
+  cancel-in-progress: false
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build commit image
+        run: docker build --pull --tag "ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA" .
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+      - name: Publish verified commit image
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA"
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$image"
+      - name: Deployment prerequisites
+        id: deployment
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          if [[ -n "$SSH_HOST" && -n "$SSH_USER" && -n "$SSH_PRIVATE_KEY" && -n "$SSH_KNOWN_HOSTS" && -n "$DEPLOY_PATH" ]]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Image published. Server deployment awaits SSH secrets and the server .env.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Deploy through verified SSH connection
+        if: steps.deployment.outputs.ready == 'true'
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_/-]+$ && "$DEPLOY_PATH" != / && "$DEPLOY_PATH" != *..* ]]
+          port="${SSH_PORT:-22}"
+          [[ "$port" =~ ^[0-9]+$ ]]
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          trap 'rm -f ~/.ssh/deploy_key' EXIT
+          options=(-i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "mkdir -p '$DEPLOY_PATH/deploy'"
+          scp "${options[@]}" -P "$port" compose.production.yaml scripts/deploy.sh "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+          scp "${options[@]}" -P "$port" deploy/clamd.conf "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/deploy/"
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA"
+          ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "bash '$DEPLOY_PATH/deploy.sh' '$DEPLOY_PATH' '$image'"
