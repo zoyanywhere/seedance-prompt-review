@@ -64,10 +64,11 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -euo pipefail
-          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
-          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_/-]+$ && "$DEPLOY_PATH" != / && "$DEPLOY_PATH" != *..* ]]
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ ]] || { echo 'SSH_HOST must be an IP address or hostname, without a URL scheme, user or whitespace.' >&2; exit 1; }
+          [[ "$SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo 'SSH_USER must contain only the SSH username, without @host or whitespace.' >&2; exit 1; }
+          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ && "$DEPLOY_PATH" != / && "/$DEPLOY_PATH/" != *'/../'* && "/$DEPLOY_PATH/" != *'/./'* ]] || { echo 'DEPLOY_PATH must be an absolute folder path without spaces or traversal segments, e.g. /opt/promptlab.' >&2; exit 1; }
           port="${SSH_PORT:-22}"
-          [[ "$port" =~ ^[0-9]+$ ]]
+          [[ "$port" =~ ^[0-9]+$ ]] || { echo 'SSH_PORT must contain only the numeric port, e.g. 22.' >&2; exit 1; }
           umask 077
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
