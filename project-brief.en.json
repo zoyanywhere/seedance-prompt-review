@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.8",
+  "schema_version": "1.9",
   "updated_at": "2026-10-01",
   "status": "Quality-first workflow and production delivery configuration implemented; server rollout and real-video outcome validation pending",
   "implementation": {
@@ -13,7 +13,7 @@
       "Docker Compose application and PostgreSQL with non-root application process and restricted networking",
       "Automated tests and dependency, container, and basic secret checks in CI",
       "Production Traefik routing, CI-gated commit-tagged GHCR publication, SSH deployment with health checks and previous-image rollback",
-      "Production ClamAV upload scanning before decoding and storage, fail-closed behavior, non-root scanner and PostgreSQL"
+      "Non-root PostgreSQL and application with memory limits for the 1-CPU, 1-GB server; antivirus removed at creator request"
     ],
     "pending_before_public_deployment": [
       "Server DNS, SSH secrets and private environment setup; off-server backups and restore verification",
@@ -226,7 +226,7 @@
       "Invitation-only account creation, secure sessions, role-based project access, and server-side authorization checks",
       "CSRF protection where cookie sessions are used, rate limits for login/invites/uploads/reviews, and audit events",
       "Strict media type and size validation, isolated processing, safe filenames, and no public media URLs by default",
-      "Before public deployment, scan uploaded files with an isolated antivirus service and fail closed when scanning is unavailable; antivirus does not replace safe decoding or prompt-injection boundaries",
+      "Antivirus removed at creator request for the 1-GB host; retain authenticated private uploads, file validation, decoder updates and prompt-injection boundaries. No malware scan is provided.",
       "API keys and session secrets injected at runtime, never baked into images, logged, or returned to browsers",
       "Per-review cost and concurrency ceilings to limit accidental API spend"
     ],
@@ -451,9 +451,16 @@
     "reverse_proxy": "Existing Traefik websecure / myresolver on web-network",
     "compose_file": "compose.production.yaml",
     "image": "ghcr.io/zoyanywhere/seedance-prompt-review:<commit-sha>",
-    "upload_scanner": "ClamAV 1.5.4, non-root, required in production before media decoding/storage",
+    "upload_scanner": "None; removed at creator request for the 1-GB host",
     "database": "PostgreSQL 17.11, non-root production process",
     "dependabot": "Weekly pip, Dockerfile, Docker Compose and GitHub Actions updates; tested-head auto-merge; PostgreSQL major updates excluded pending migration",
-    "live_deployment": "Pending user-managed server environment, DNS and repository SSH secrets"
+    "live_deployment": "Pending user-managed server environment, DNS and repository SSH secrets",
+    "server_resources": {
+      "cpu": 1,
+      "ram_mb": 1024,
+      "app_memory_limit": "512m",
+      "database_memory_limit": "192m",
+      "usage": "Light use; concurrent media processing requires load testing"
+    }
   }
 }

@@ -81,8 +81,7 @@ jobs:
             [[ "$GHCR_USERNAME" =~ ^[a-zA-Z0-9-]+$ && -n "$GHCR_TOKEN" ]]
             printf '%s' "$GHCR_TOKEN" | ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "umask 077; docker login ghcr.io --username '$GHCR_USERNAME' --password-stdin"
           fi
-          ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "mkdir -p '$DEPLOY_PATH/deploy'"
+          ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "mkdir -p '$DEPLOY_PATH'"
           scp "${options[@]}" -P "$port" compose.production.yaml scripts/deploy.sh "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
-          scp "${options[@]}" -P "$port" deploy/clamd.conf "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/deploy/"
           image="ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA"
           ssh "${options[@]}" -p "$port" "$SSH_USER@$SSH_HOST" "bash '$DEPLOY_PATH/deploy.sh' '$DEPLOY_PATH' '$image'"

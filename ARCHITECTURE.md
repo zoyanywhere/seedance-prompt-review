@@ -39,7 +39,7 @@ New projects default to agent-proposed duration. Existing projects keep their pr
 
 ## Production entry and upload gate
 
-`promptlab.zoyanywhere.com` uses the existing Traefik HTTPS router and external `web-network`. Invitation-only access and project ownership checks precede upload handling. Production uploads pass an isolated non-root ClamAV INSTREAM scan before decoding or permanent storage. Only an explicit clean result is accepted; unavailable or inconclusive scans reject the upload. PostgreSQL and the scanner expose no host ports. Freshclam updates signatures on a separate outbound network. CI gates commit-tagged image publication and the health-checked SSH deployment. See [deployment details](docs/DEPLOYMENT.md).
+`promptlab.zoyanywhere.com` uses the existing Traefik HTTPS router and external `web-network`. Invitation-only access and project ownership checks precede upload handling. File type, size, pixel count and duration are checked before private storage. Antivirus scanning was removed at the creator's request for the 1-CPU, 1-GB host. Application and PostgreSQL run without root; PostgreSQL exposes no host ports. CI gates commit-tagged image publication and the health-checked SSH deployment. See [deployment details](docs/DEPLOYMENT.md).
 
 ## Validation and cost
 

@@ -64,9 +64,9 @@ The complete workflow must work on desktop and mobile. On phones, brief entry, r
 - A usage dashboard showing input, output, cache, and reasoning tokens where available; estimated cost per call, agent, round, and complete review; and pre-call budget checks.
 - BytePlus Seedance 2.5 API integration in a later phase.
 
-Configurable media retention, account/project sharing, durable background workers, and database migrations are follow-up implementation work before production deployment. The current server/domain deployment remains undecided.
+Configurable media retention, account/project sharing, durable background workers, and database migrations are follow-up implementation work before production deployment. The deployment domain is promptlab.zoyanywhere.com on the existing 1-CPU, 1-GB server.
 
-Before accepting public-server uploads, add an isolated antivirus scanner (for example ClamAV) that scans every file before storage and fails closed when unavailable. Current limits, content inspection, private storage, and container restrictions remain in place. Antivirus signatures cannot detect prompt injection in a brief or media; agents must treat embedded text and speech in references as untrusted source content, and media decoders still need isolation and updates.
+Uploads are checked for file type, size, pixel count and duration and stored privately. Antivirus scanning was removed at the creator's request for the 1-GB host. These checks do not detect malware. Keep decoders updated and treat embedded text and speech as untrusted source content.
 
 See [the machine-readable project brief](project-brief.en.json) for roles, gates, and source boundaries.
 
@@ -86,7 +86,7 @@ Never commit `.env`, API keys, uploaded media, or user prompts. Use `.env.exampl
 
 ## Container security and upgrades
 
-Production deployment for **promptlab.zoyanywhere.com** uses the existing Traefik `web-network`, commit-tagged GHCR images, and a separate ClamAV container. Uploads must pass scanning before media decoding or storage. See [deployment and first-admin instructions](docs/DEPLOYMENT.md) for server environment variables, SSH secrets, backups, and rollout behavior.
+Production deployment for **promptlab.zoyanywhere.com** uses the existing Traefik `web-network`, commit-tagged GHCR images, and non-root application and PostgreSQL containers. Default memory limits are 512 MB for the app and 192 MB for PostgreSQL. See [deployment and first-admin instructions](docs/DEPLOYMENT.md).
 
 The app image uses a multi-stage build and version-pinned Python base image. The app runs as a dedicated non-root user with a read-only root filesystem, an explicit media volume, dropped Linux capabilities, `no-new-privileges`, a health check, and resource limits. PostgreSQL is reachable only on an internal network. The app listens on the host loopback interface, ready for a TLS reverse proxy at deployment. Containers do not receive the Docker socket or privileged mode.
 
