@@ -9,16 +9,16 @@ An invitation-only web application for reviewing Seedance 2.5 prompts **before**
 ## Workflow
 
 1. Human creators provide the brief, must-have requirements, optional image/video/audio references, target duration, resolution, and aspect ratio.
-2. A deterministic validator checks media and task-specific BytePlus constraints. GPT-6 Luna structures the creator brief; GPT-6 Sol drafts a shot-by-shot storyboard. Each shot gets a visual scene card from the brief and available references; creators can request AI-generated previews for selected shots or the whole storyboard after seeing an estimated cost.
+2. A deterministic validator checks media and task-specific BytePlus constraints. GPT-6 Luna structures the creator brief; GPT-6.1 Sol drafts a shot-by-shot storyboard. Each shot gets a visual scene card from the brief and available references; creators can request AI-generated previews for selected shots or the whole storyboard after seeing an estimated cost.
 3. Creators edit and approve the storyboard, preview images, media roles, and output settings.
-4. GPT-6 Sol drafts a prompt bound to that approved storyboard version.
+4. GPT-6.1 Sol drafts a prompt bound to that approved storyboard version.
 5. Four independent specialist reviews examine action/timing, camera/visuals, audio/dialogue, and continuity.
-6. GPT-6 Sol independently challenges the full context and specialist findings.
-7. GPT-6 Sol supervises revisions. Unresolved critical conflicts are escalated to GPT-6 Astra. A deterministic Seedance linter checks structural rules.
+6. GPT-6.1 Sol independently challenges the full context and specialist findings.
+7. GPT-6.1 Sol supervises revisions. Unresolved critical conflicts are escalated to GPT-6 Astra. A deterministic Seedance linter checks structural rules.
 8. Creators review the findings, remaining risks, and final prompt before approval. The final screen maps each uploaded file to its Seedance alias (`@Image1`, `@Video1`, `@Audio1`), in upload order within each media type.
 9. Creators copy the alias-based prompt, upload the listed files in the same order to their video studio, and set duration, aspect ratio, and resolution in the studio's separate controls. This release does not send files to BytePlus or another video studio.
 
-The review loop defaults to three rounds (`MAX_REVIEW_ROUNDS`, allowed range 2–5) and has a cost ceiling. Another specialist round runs only after the supervisor changes the prompt. A last-round revision receives one targeted GPT-6 Sol audit; older findings do not automatically block a corrected prompt. Existing blocked last-round revisions can request that audit without repeating the entire agent team. Major or critical defects in the final text still block approval; persistent critical conflicts are escalated to Astra. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
+The review loop defaults to three rounds (`MAX_REVIEW_ROUNDS`, allowed range 2–5) and has a cost ceiling. Another specialist round runs only after the supervisor changes the prompt. A last-round revision receives one targeted GPT-6.1 Sol audit; older findings do not automatically block a corrected prompt. Existing blocked last-round revisions can request that audit without repeating the entire agent team. Major or critical defects in the final text still block approval; persistent critical conflicts are escalated to Astra. Passing review reduces avoidable prompt errors; it cannot guarantee Seedance's output.
 
 Creator instructions and uploaded references have priority over generated storyboard previews. Image generation is optional and starts only for selected shots or a creator-requested batch. Gemini 3.1 Flash Image is the initial candidate, pending access, pricing, and quality checks. The dashboard includes preview generation costs. Creators approve, replace, or reject previews before reviewers use them; rejection deletes the preview file while keeping its cost record. Previews are not automatically sent to Seedance as reference assets.
 
@@ -58,7 +58,7 @@ The complete workflow must work on desktop and mobile. On phones, brief entry, r
 ## Implementation and later phases
 
 - LangGraph for the bounded review graph; the application database stores storyboard versions, reviews, usage, and human approval decisions.
-- OpenAI GPT-6 Luna, Sol, and Astra; Anthropic Claude Sonnet 5.5; Google Gemini 3.8 Flash. Transient Gemini 3.8 overloads are retried, then routed to Gemini 3.5 Flash and 3.5 Flash-Lite if needed; the actual successful model and attempt count appear in usage records. Google currently limits Gemini 2.5 access for new users.
+- OpenAI GPT-6 Luna, GPT-6.1 Sol, and GPT-6 Astra; Anthropic Claude Sonnet 5.5; Google Gemini 3.8 Flash. Transient Gemini 3.8 overloads are retried, then routed to Gemini 3.5 Flash and 3.5 Flash-Lite if needed; the actual successful model and attempt count appear in usage records. Google currently limits Gemini 2.5 access for new users.
 - Docker deployment, invitation-only accounts, project ownership checks, server-side API keys, and private local media storage. Admins create expiring invitation links and send them manually.
 - A usage dashboard showing input, output, cache, and reasoning tokens where available; estimated cost per call, agent, round, and complete review; and pre-call budget checks.
 - BytePlus Seedance 2.5 API integration in a later phase.

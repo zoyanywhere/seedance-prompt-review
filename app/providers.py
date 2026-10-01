@@ -18,15 +18,15 @@ MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", "./data/media"))
 
 MODEL_IDS = {
     "brief_intake": os.getenv("MODEL_BRIEF", "gpt-6-luna"),
-    "storyboard": os.getenv("MODEL_STORYBOARD", "gpt-6-sol"),
-    "prompt_draft": os.getenv("MODEL_DRAFT", "gpt-6-sol"),
-    "action_timing": os.getenv("MODEL_ACTION", "gpt-6-sol"),
+    "storyboard": os.getenv("MODEL_STORYBOARD", "gpt-6.1-sol"),
+    "prompt_draft": os.getenv("MODEL_DRAFT", "gpt-6.1-sol"),
+    "action_timing": os.getenv("MODEL_ACTION", "gpt-6.1-sol"),
     "camera_visuals": os.getenv("MODEL_VISUAL", "gemini-3.8-flash"),
     "audio_dialogue": os.getenv("MODEL_AUDIO", "gemini-3.8-flash"),
     "continuity": os.getenv("MODEL_CONTINUITY", "claude-sonnet-5-5"),
-    "challenge_review": os.getenv("MODEL_CHALLENGE", "gpt-6-sol"),
-    "final_verification": os.getenv("MODEL_FINAL_VERIFICATION", "gpt-6-sol"),
-    "supervisor": os.getenv("MODEL_SUPERVISOR", "gpt-6-sol"),
+    "challenge_review": os.getenv("MODEL_CHALLENGE", "gpt-6.1-sol"),
+    "final_verification": os.getenv("MODEL_FINAL_VERIFICATION", "gpt-6.1-sol"),
+    "supervisor": os.getenv("MODEL_SUPERVISOR", "gpt-6.1-sol"),
     "critical_escalation": os.getenv("MODEL_ESCALATION", "gpt-6-astra"),
     "preview": os.getenv("MODEL_PREVIEW", "gemini-3.1-flash-image"),
 }
@@ -36,6 +36,8 @@ MODEL_IDS = {
 RATES = {
     "gpt-6-luna": (0.10, 0.50, 0.01),
     "gpt-6-sol": (2.00, 10.00, 0.20),
+    # Standard tier, verified 2026-10-01 against the official model page.
+    "gpt-6.1-sol": (2.00, 10.00, 0.10),
     "gpt-6-astra": (10.00, 50.00, 1.00),
     "claude-sonnet-5-5": (2.00, 10.00, 0.20),
     "claude-opus-5-5": (4.00, 20.00, 0.20),

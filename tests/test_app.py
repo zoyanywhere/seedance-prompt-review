@@ -15,6 +15,14 @@ from app.security import hash_password
 from app.providers import ModelResult
 
 
+def test_sol_61_cost_includes_discounted_cached_tokens():
+    from app.providers import estimate_cost, preflight_estimate
+
+    # 500k ordinary input, 500k cached input, 100k output.
+    assert estimate_cost("gpt-6.1-sol", 1_000_000, 100_000, 500_000) == 2.05
+    assert preflight_estimate("gpt-6.1-sol", "A short prompt", 1000) == 0.012
+
+
 def test_gemini_overload_uses_recorded_fallback(monkeypatch):
     from app import providers
 
@@ -327,7 +335,7 @@ def test_last_round_revision_gets_final_audit_instead_of_stale_blocker(monkeypat
     from app import workflow
     from app.providers import MODEL_IDS
 
-    assert MODEL_IDS["challenge_review"] == "gpt-6-sol"
+    assert MODEL_IDS["challenge_review"] == "gpt-6.1-sol"
     monkeypatch.setattr(workflow, "MAX_REVIEW_ROUNDS", 2)
     calls = []
 
