@@ -13,7 +13,7 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "${TRUSTED_PROXY_IPS:-127.0.0.1}"]
     volumes: [media_data:/app/data/media]
     read_only: true
-    tmpfs: [/tmp:size=128m,noexec,nosuid,nodev]
+    tmpfs: ["/tmp:size=128m,noexec,nosuid,nodev"]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     pids_limit: 256
