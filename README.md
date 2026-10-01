@@ -93,3 +93,5 @@ The app image uses a multi-stage build and version-pinned Python base image. The
 Dependencies and base images receive weekly Dependabot update PRs. CI checks builds, tests, dependency advisories, container vulnerabilities, and obvious accidental secrets. Production upgrades should use reviewed immutable images with a rollback path; application containers do not silently self-update at startup. See the [project brief](project-brief.en.json) for the full security and maintenance requirements.
 
 Dependabot PRs can auto-merge after both required CI jobs (`test` and `container`) pass for the current PR head. Branch protection must require those checks; the auto-merge workflow does not check out or execute PR code with write permissions.
+
+The interface follows Zoya Anywhere's current director identity: near-black surfaces, Instrument Serif headings, JetBrains Mono labels, orange actions and fine grid borders, with responsive creator forms.
