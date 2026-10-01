@@ -10,20 +10,18 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
       MEDIA_ROOT: /app/data/media
       SECURE_COOKIES: "true"
-      ANTIVIRUS_REQUIRED: "true"
-      CLAMD_HOST: clamav
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "${TRUSTED_PROXY_IPS:-127.0.0.1}"]
     volumes: [media_data:/app/data/media]
     read_only: true
-    tmpfs: [/tmp:size=256m,noexec,nosuid,nodev]
+    tmpfs: [/tmp:size=128m,noexec,nosuid,nodev]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     pids_limit: 256
-    mem_limit: 2g
+    mem_limit: ${APP_MEMORY_LIMIT:-512m}
+    memswap_limit: ${APP_MEMORY_LIMIT:-512m}
     cpus: ${APP_CPUS:-1.0}
     depends_on:
       db: {condition: service_healthy}
-      clamav: {condition: service_healthy}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
       interval: 15s
@@ -41,6 +39,9 @@ services:
     image: postgres:17.11-alpine3.23
     user: postgres
     restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=20", "-c", "work_mem=2MB", "-c", "maintenance_work_mem=32MB"]
+    mem_limit: ${DB_MEMORY_LIMIT:-192m}
+    memswap_limit: ${DB_MEMORY_LIMIT:-192m}
     environment:
       POSTGRES_DB: seedance
       POSTGRES_USER: seedance
@@ -55,33 +56,9 @@ services:
       timeout: 5s
       retries: 5
     networks: [internal]
-  clamav:
-    image: clamav/clamav:1.5.4_base
-    user: clamav
-    entrypoint: /init-unprivileged
-    restart: unless-stopped
-    volumes:
-      - clamav_signatures:/var/lib/clamav
-      - ./deploy/clamd.conf:/etc/clamav/clamd.conf:ro
-    environment:
-      FRESHCLAM_CHECKS: "12"
-    security_opt: [no-new-privileges:true]
-    cap_drop: [ALL]
-    pids_limit: 128
-    mem_limit: 4g
-    cpus: ${CLAMAV_CPUS:-1.0}
-    healthcheck:
-      test: ["CMD", "clamdcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      start_period: 300s
-      retries: 10
-    networks: [internal, updates]
 networks:
   internal: {internal: true}
-  updates: {}
   web-network: {external: true}
 volumes:
   media_data:
   postgres_data:
-  clamav_signatures:

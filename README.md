@@ -10,7 +10,7 @@ The diagram shows the implemented quality-first workflow. See [the architecture 
 
 ## Workflow
 
-1. Creators provide intent, must-haves and optional image/video/audio references, plus resolution and aspect ratio. For new projects the director proposes a duration from 4–30 seconds; creators approve it with the storyboard. Existing fixed-duration projects retain their setting.
+1. Creators provide intent, must-haves and optional image/video/audio references, plus resolution and aspect ratio. For new projects the director proposes a duration from 4â€“30 seconds; creators approve it with the storyboard. Existing fixed-duration projects retain their setting.
 2. Technical validation checks inputs. Gemini 3.8 Flash (high) analyzes references before planning; Sol 6.1 (high) cross-checks sampled video frames. Source observations are cached by source identity/role and shared downstream.
 3. Luna structures the original brief. Claude Opus 5.5 (high) develops direction, hook/payoff, purposeful creative rule breaks, shot timing and acceptance criteria. Continuous shot windows must add up to the proposed duration.
 4. Creators edit and approve the storyboard and optional image previews. Sol 6.1 (high) drafts the prompt from the approved plan and source evidence.
@@ -19,7 +19,7 @@ The diagram shows the implemented quality-first workflow. See [the architecture 
 7. Unresolved findings return to Astra within a bounded repair loop. Source conflicts, exhausted budgets and stalled unchanged prompts stop repetition. The linter checks settings and timing; creators approve the final result.
 8. Handoff maps files to `@ImageN`, `@VideoN` and `@AudioN` in upload order per media type. Upload those files to the external studio and set duration, ratio and resolution separately. This release does not generate BytePlus video.
 
-`MAX_REVIEW_ROUNDS` bounds repair/audit rounds (default 3, range 2–5). `DEFAULT_REVIEW_BUDGET_USD` and `PREPARATION_BUDGET_USD` default to $5 each. Budget estimates reserve the entire parallel batch before dispatch; actual provider usage replaces each reservation. Failed calls with unknown billing retain a conservative reservation. Critical reviews retry the same model instead of silently falling back to a weaker one. These estimates cannot enforce an exact provider invoice cap.
+`MAX_REVIEW_ROUNDS` bounds repair/audit rounds (default 3, range 2â€“5). `DEFAULT_REVIEW_BUDGET_USD` and `PREPARATION_BUDGET_USD` default to $5 each. Budget estimates reserve the entire parallel batch before dispatch; actual provider usage replaces each reservation. Failed calls with unknown billing retain a conservative reservation. Critical reviews retry the same model instead of silently falling back to a weaker one. These estimates cannot enforce an exact provider invoice cap.
 
 Creator instructions and uploaded references have priority over generated storyboard previews. Image generation is optional and starts only for selected shots or a creator-requested batch. Gemini 3.1 Flash Image is the initial candidate, pending access, pricing, and quality checks. The dashboard includes preview generation costs. Creators approve, replace, or reject previews before reviewers use them; rejection deletes the preview file while keeping its cost record. Previews are not automatically sent to Seedance as reference assets.
 
@@ -54,7 +54,7 @@ The application follows the current [Zoyanywhere website](https://zoyanywhere.co
 
 Selective 3D depth is part of the visual direction: a spatial dashboard illustration, subtle perspective on storyboard shot cards, and an optional interactive view when it helps explain framing or camera motion. Forms, findings, costs, and approvals stay flat and readable. Heavy scenes load on demand, reduced-motion preferences are respected, and a static 2D fallback keeps the full workflow usable on phones and low-power devices.
 
-The complete workflow must work on desktop and mobile. On phones, brief entry, reference uploads, storyboard shots, preview approval, agent findings, cost dashboard, and final approval use a single-column layout without horizontal page overflow. Desktop uses its wider space for shot timelines and side-by-side reference and preview comparison. Verify 360, 390, 768, and 1280 CSS-pixel widths and touch targets of at least 44 × 44 CSS pixels.
+The complete workflow must work on desktop and mobile. On phones, brief entry, reference uploads, storyboard shots, preview approval, agent findings, cost dashboard, and final approval use a single-column layout without horizontal page overflow. Desktop uses its wider space for shot timelines and side-by-side reference and preview comparison. Verify 360, 390, 768, and 1280 CSS-pixel widths and touch targets of at least 44 Ã— 44 CSS pixels.
 
 ## Implementation and later phases
 
@@ -64,15 +64,15 @@ The complete workflow must work on desktop and mobile. On phones, brief entry, r
 - A usage dashboard showing input, output, cache, and reasoning tokens where available; estimated cost per call, agent, round, and complete review; and pre-call budget checks.
 - BytePlus Seedance 2.5 API integration in a later phase.
 
-Configurable media retention, account/project sharing, durable background workers, and database migrations are follow-up implementation work before production deployment. The current server/domain deployment remains undecided.
+Configurable media retention, account/project sharing, durable background workers, and database migrations are follow-up implementation work before production deployment. The deployment domain is promptlab.zoyanywhere.com on the existing 1-CPU, 1-GB server.
 
-Before accepting public-server uploads, add an isolated antivirus scanner (for example ClamAV) that scans every file before storage and fails closed when unavailable. Current limits, content inspection, private storage, and container restrictions remain in place. Antivirus signatures cannot detect prompt injection in a brief or media; agents must treat embedded text and speech in references as untrusted source content, and media decoders still need isolation and updates.
+Uploads are checked for file type, size, pixel count and duration and stored privately. Antivirus scanning was removed at the creator's request for the 1-GB host. These checks do not detect malware. Keep decoders updated and treat embedded text and speech as untrusted source content.
 
 See [the machine-readable project brief](project-brief.en.json) for roles, gates, and source boundaries.
 
 ## Seedance-specific constraints
 
-The internal media database ID is not a Seedance reference token. The final handoff displays `@ImageN`, `@VideoN`, and `@AudioN` aliases and a matching file list. These numbers count independently by media type in upload order: five images and one video yield `@Image1`–`@Image5` and `@Video1`. Text alone cannot attach a file; the creator must upload the listed source files in that order to the external studio. Duration, ratio, and resolution are separate video-generation settings, while shot timing and visual instructions remain in the prompt.
+The internal media database ID is not a Seedance reference token. The final handoff displays `@ImageN`, `@VideoN`, and `@AudioN` aliases and a matching file list. These numbers count independently by media type in upload order: five images and one video yield `@Image1`â€“`@Image5` and `@Video1`. Text alone cannot attach a file; the creator must upload the listed source files in that order to the external studio. Duration, ratio, and resolution are separate video-generation settings, while shot timing and visual instructions remain in the prompt.
 
 Creators can edit an attached reference's role after upload. Mark a video as authoritative for camera path, blocking, action, or timing when those properties must be preserved; state explicitly when a subject transforms and the original must disappear. Changing a role clears storyboard and prompt approval so the agents review the revised source instruction. A reference-to-video prompt remains a generative request, not a guarantee of exact motion or frame reproduction; source duration and storyboard shot duration should agree before approval.
 
@@ -86,7 +86,7 @@ Never commit `.env`, API keys, uploaded media, or user prompts. Use `.env.exampl
 
 ## Container security and upgrades
 
-Production deployment for **promptlab.zoyanywhere.com** uses the existing Traefik `web-network`, commit-tagged GHCR images, and a separate ClamAV container. Uploads must pass scanning before media decoding or storage. See [deployment and first-admin instructions](docs/DEPLOYMENT.md) for server environment variables, SSH secrets, backups, and rollout behavior.
+Production deployment for **promptlab.zoyanywhere.com** uses the existing Traefik `web-network`, commit-tagged GHCR images, and non-root application and PostgreSQL containers. Default memory limits are 512 MB for the app and 192 MB for PostgreSQL. See [deployment and first-admin instructions](docs/DEPLOYMENT.md).
 
 The app image uses a multi-stage build and version-pinned Python base image. The app runs as a dedicated non-root user with a read-only root filesystem, an explicit media volume, dropped Linux capabilities, `no-new-privileges`, a health check, and resource limits. PostgreSQL is reachable only on an internal network. The app listens on the host loopback interface, ready for a TLS reverse proxy at deployment. Containers do not receive the Docker socket or privileged mode.
 

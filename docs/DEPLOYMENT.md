@@ -6,13 +6,13 @@ Public entry point: **https://promptlab.zoyanywhere.com**. Access remains invita
 
 Match `zoyanywhere-site`: the existing Traefik instance terminates HTTPS on `websecure` using `myresolver` and routes through the external Docker `web-network`. The website's Caddy serves its static files; this Python application does not require another Caddy container.
 
-The production Compose file is standalone. It publishes no host ports. Only the app has Traefik labels. PostgreSQL and ClamAV communicate over the private internal network. ClamAV has a separate outbound network for signature updates, and its unauthenticated TCP port is never published. The application runs as UID/GID 10001 with a read-only filesystem; the scanner uses the official non-root `clamav` startup. Neither receives the Docker socket.
+The production Compose file publishes no host ports. Only the app has Traefik labels. PostgreSQL uses the private internal network. Both services run without root; the app has a read-only filesystem and neither receives the Docker socket.
 
 ## Server preparation
 
 1. Point the DNS A/AAAA records for `promptlab.zoyanywhere.com` at the server.
-2. Use the existing Docker/Traefik installation and `web-network`. Recommend 2 vCPUs and 8 GB RAM for this shared website/app/database/scanner host. Reserve at least 4 GB for ClamAV in addition to app/database/OS memory. A 1 GB VM cannot run this stack reliably. Deployment stops before pulling or starting containers when Docker reports less than 3.5 GB usable RAM (allowing system overhead on a nominal 4 GB host); passing this minimum check does not replace load testing. Production CPU quotas default to one core; `APP_CPUS` and `CLAMAV_CPUS` can be adjusted in `.env` but must not exceed the host CPU count. The deployment prints Docker's available CPU count and RAM for diagnostics.
-3. Create a separate deployment directory, for example `/opt/promptlab`. Copy `.env.example` to its private `.env` and fill in API keys and a strong PostgreSQL password. Set `TRUSTED_PROXY_IPS` to the actual Traefik address or a dedicated trusted proxy subnet. Keep `.env` readable only by the deployment account. Do not commit it.
+2. Use the existing Docker/Traefik installation and `web-network`. The confirmed host has 1 CPU and 1 GB RAM. Defaults are `APP_CPUS=1.0`, `APP_MEMORY_LIMIT=512m`, and `DB_MEMORY_LIMIT=192m`; PostgreSQL uses 32 MB shared buffers and up to 20 connections. AI inference runs remotely. This configuration targets light use; media processing and concurrent jobs still need load testing alongside the existing website and proxy. Deployment prints available CPU and RAM. Antivirus scanning is not included.
+3. Create a separate deployment directory, `/opt/promptlab.zoyanywhere.com`. Copy `.env.example` to its private `.env` and fill in API keys and a strong PostgreSQL password. Set `TRUSTED_PROXY_IPS` to the actual Traefik address or a dedicated trusted proxy subnet. Keep `.env` readable only by the deployment account. Do not commit it.
 4. The SSH deployment account needs Docker access. Configure GitHub repository secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `DEPLOY_PATH`, and optionally `SSH_PORT` (defaults to 22). The workflow discovers host keys with `ssh-keyscan` at the start of each deployment; no `SSH_KNOWN_HOSTS` secret is needed. SSH checks against these discovered keys, but the initial server identity is not independently verified. Use a distinct `DEPLOY_PATH` from the website.
 5. For private GHCR images, set repository secrets `GHCR_USERNAME` and `GHCR_TOKEN` (a token with `read:packages` and access to this package). The workflow logs the deployment account into GHCR over SSH using password stdin before pulling images; the token is never included in the remote command arguments. Set both secrets together. Without them, the package must be public or the server must already be logged in. Provider keys remain in the private server `.env`.
 
@@ -20,7 +20,7 @@ The production Compose file is standalone. It publishes no host ports. Only the 
 
 Pull requests run tests inside the non-root application runtime, using its installed FFmpeg instead of installing media tools on the Ubuntu runner. A separate test build stage supplies test dependencies; the default production image excludes them. CI also runs secret checks, dependency auditing, a non-root image check and Trivy scanning. Production Compose is validated in CI. Main pushes and manual runs of **Release and deploy** run these checks again before publishing `ghcr.io/zoyanywhere/seedance-prompt-review:<commit-sha>`. Deployment uses that commit tag, never `latest`.
 
-Without SSH secrets, the workflow publishes the image and explicitly reports that server deployment is pending. Once configured, it copies the Compose file and deployment script, pulls images, saves a database backup for an existing installation, then waits for all services to become healthy. Initial ClamAV signature downloads can take several minutes. A failed update restores the previous app image when available; database schema changes are not automatically reversed.
+Without SSH secrets, the workflow publishes the image and explicitly reports that server deployment is pending. Once configured, it copies the Compose file and deployment script, pulls images, saves a database backup for an existing installation, then waits for all services to become healthy. Obsolete scanner containers are removed during startup; existing named volumes are retained. A failed update restores the previous app image when available; database schema changes are not automatically reversed.
 
 Dependabot checks Python, Docker and GitHub Actions weekly. Its PRs merge only after successful CI for their current head commit and required branch checks. After a bot merge, the workflow explicitly dispatches the release workflow because `GITHUB_TOKEN` merges do not trigger push workflows. No pull-request code executes in the privileged merge workflow.
 
@@ -35,12 +35,10 @@ docker compose --project-name promptlab -f compose.production.yaml run --rm app 
 
 Enter the password interactively. Local accounts and local media are not automatically migrated to production.
 
-Persist PostgreSQL, media and signature volumes. Keep encrypted off-server backups of PostgreSQL and private media, and test restores before accepting valuable projects. Pre-deployment dumps in `backups/` are only local recovery copies; set retention and off-server backup separately. Never use `docker compose down -v` on the production installation. Monitor container health, signature updates, free disk space and provider usage. A scanner failure returns HTTP 503 for new uploads rather than accepting unchecked files.
+Persist PostgreSQL and media volumes. Keep encrypted off-server backups and test restores. Pre-deployment dumps in `backups/` are local recovery copies; configure retention separately. Never use `docker compose down -v` on production. Monitor container health, memory, disk space and provider usage.
 
 ## Upload safety boundaries
 
-Every production upload is streamed to ClamAV **before** Pillow/FFmpeg inspection and permanent media storage. Only an explicit clean response permits decoding. Malware is rejected; errors, timeouts and malformed responses block the upload. Existing file-size, pixel, duration and MIME checks remain in place. Files stay private to their owning project.
+Uploads require authenticated project ownership and pass file-type, size, pixel and duration checks. Files remain private to their project. Antivirus scanning was removed at the creator's request to fit the 1-GB host; uploads are not malware-scanned.
 
-ClamAV is one protective layer, not protection against every decoder vulnerability or prompt injection. Keep images and dependencies updated. Prompt text and media content remain untrusted data for the agents; antivirus scanning does not establish their instruction authority.
-
-Official scanner reference: https://docs.clamav.net/manual/Installing/Docker.html
+Keep images, dependencies and media decoders updated. Validation does not detect every malicious file or decoder exploit. Prompt text and media remain untrusted data for agents.
