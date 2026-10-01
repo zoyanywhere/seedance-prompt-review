@@ -145,11 +145,11 @@ def test_storyboard_and_review_gate(monkeypatch):
         if phase == "storyboard":
             return ModelResult('{"duration_seconds":8,"shots":[{"id":"shot-1","time_window":"0-8s","visible_action":"Fox crosses field","reference_media_ids":[]}],"open_questions":[]}')
         if phase == "prompt_draft":
-            return ModelResult('{"prompt":"An orange fox crosses a snowy field in one wide shot, 0â€“8 seconds."}')
+            return ModelResult('{"prompt":"An orange fox crosses a snowy field in one wide shot, 0–8 seconds."}')
         if phase in {"action_timing", "camera_visuals", "audio_dialogue", "continuity", "challenge_review"}:
             return ModelResult('{"findings":[],"verdict":"clear"}')
         if phase == "supervisor":
-            return ModelResult('{"prompt":"An orange fox crosses a snowy field in one wide shot, 0â€“8 seconds.","unresolved_critical":false,"needs_recheck":false,"risks":[],"decisions":[]}')
+            return ModelResult('{"prompt":"An orange fox crosses a snowy field in one wide shot, 0–8 seconds.","unresolved_critical":false,"needs_recheck":false,"risks":[],"decisions":[]}')
         raise AssertionError(phase)
     monkeypatch.setattr("app.workflow.call_model", fake_model)
     with TestClient(app) as client:
@@ -222,7 +222,7 @@ def test_serious_finding_requires_reviewed_revision(monkeypatch):
         if phase in {"camera_visuals", "audio_dialogue", "continuity", "challenge_review"}:
             return ModelResult('{"findings":[]}')
         if phase == "supervisor":
-            text = "A fox walks across snow in 0â€“8 seconds."
+            text = "A fox walks across snow in 0–8 seconds."
             return ModelResult('{"prompt":' + __import__("json").dumps(text) + ',"unresolved_critical":false,"needs_recheck":false,"risks":[]}')
         raise AssertionError(phase)
 
@@ -708,7 +708,7 @@ def quality_project(db):
     from app.db import Review, utcnow
     user = db.scalar(select(User).where(User.email == "admin@example.test"))
     project = Project(owner_id=user.id, title="Quality check", brief="A fox crosses snow.", duration=8,
-                      storyboard={"shots":[{"id":"s1","time_window":"0â€“8","visible_action":"Fox crosses snow"}]},
+                      storyboard={"shots":[{"id":"s1","time_window":"0–8","visible_action":"Fox crosses snow"}]},
                       storyboard_version=1, storyboard_approved_at=utcnow(), status="review_running")
     db.add(project); db.commit()
     review = Review(project_id=project.id, storyboard_version=1, budget_usd=5)
@@ -755,15 +755,15 @@ def test_quality_timeline_rejects_gaps_overruns_and_nan():
     import pytest
     from app.workflow import validate_storyboard, PIPELINE_VERSION, time_window
     project = Project(duration=8, storyboard={"_pipeline_version":PIPELINE_VERSION,"duration_seconds":8,"shots":[
-        {"id":"s1","visible_action":"Walk","time_window":"0â€“4"},
-        {"id":"s2","visible_action":"Stop","time_window":"5â€“8"}]})
+        {"id":"s1","visible_action":"Walk","time_window":"0–4"},
+        {"id":"s2","visible_action":"Stop","time_window":"5–8"}]})
     assert any("continuous" in x for x in validate_storyboard(project, []))
-    project.storyboard["shots"][1]["time_window"] = "4â€“9"
+    project.storyboard["shots"][1]["time_window"] = "4–9"
     assert any("add up" in x for x in validate_storyboard(project, []))
-    project.storyboard["shots"][1]["time_window"] = "4â€“8"
+    project.storyboard["shots"][1]["time_window"] = "4–8"
     assert validate_storyboard(project, []) == []
-    with pytest.raises(ValueError): time_window("0â€“nan")
-    assert time_window("00:12â€“00:14.134") == (12,14.134)
+    with pytest.raises(ValueError): time_window("0–nan")
+    assert time_window("00:12–00:14.134") == (12,14.134)
 
 
 def test_quality_media_analysis_precedes_director_and_is_reused(monkeypatch):
@@ -779,7 +779,7 @@ def test_quality_media_analysis_precedes_director_and_is_reused(monkeypatch):
         if phase=="brief_intake": return ModelResult('{"intent":"fox"}')
         assert phase=="storyboard" and "orange fur" in prompt
         return ModelResult(json.dumps({"duration_seconds":12,"duration_rationale":"Readable motion and payoff","shots":[
-            {"id":"s1","time_window":"0â€“12","visible_action":"Fox walks","reference_media_ids":[77]}]}))
+            {"id":"s1","time_window":"0–12","visible_action":"Fox walks","reference_media_ids":[77]}]}))
     monkeypatch.setattr(workflow,"call_model",fake)
     with SessionLocal() as db:
         project,_=quality_project(db)
