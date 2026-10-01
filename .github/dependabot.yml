@@ -8,6 +8,14 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # PostgreSQL major upgrades require an explicit data migration.
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:

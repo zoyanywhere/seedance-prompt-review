@@ -14,6 +14,7 @@ from typing import Literal
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import func, select
@@ -25,6 +26,7 @@ from .security import COOKIE_NAME, SECURE_COOKIES, SESSION_HOURS, current_user, 
 from .workflow import audit_prior_revision, generate_storyboard, normalize_storyboard_references, run_review, validate_settings, validate_storyboard
 from .workflow import PIPELINE_VERSION
 from .evidence import source_signature
+from .antivirus import scan_upload
 
 STATIC_ROOT = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -341,6 +343,7 @@ async def upload_media(project_id: int, file: UploadFile = File(...), role: str 
     if not blob or len(blob) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, "Media must be between 1 byte and 25 MiB")
     safe_name = Path(file.filename or "media").name[:255]
+    await run_in_threadpool(scan_upload, blob)
     kind, mime, duration, width, height = inspect_media(blob, safe_name)
     key = uuid.uuid4().hex
     path = MEDIA_ROOT / key

@@ -2,6 +2,9 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_call:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -22,6 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: docker build --pull --tag seedance-review:test .
+      - name: Validate production configuration
+        run: |
+          cp .env.example .env
+          POSTGRES_PASSWORD=ci-only APP_IMAGE=seedance-review:test docker compose -f compose.production.yaml config --quiet
       - run: |
           docker image inspect seedance-review:test --format '{{.Config.User}}' | grep -x '10001:10001'
       - uses: aquasecurity/trivy-action@v0.36.0

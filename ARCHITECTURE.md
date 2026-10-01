@@ -37,6 +37,10 @@ Source observations survive a failed preparation and can be reused while media/r
 
 New projects default to agent-proposed duration. Existing projects keep their previous fixed duration until the creator switches duration planning. Stored source evidence and director metadata survive shot edits. Legacy storyboards with uploaded media must be regenerated before the new review, so sources are analyzed before planning. Startup adds duration mode and usage effort columns without replacing existing data. Durable queues, comprehensive migrations and production hardening remain separate deployment work.
 
+## Production entry and upload gate
+
+`promptlab.zoyanywhere.com` uses the existing Traefik HTTPS router and external `web-network`. Invitation-only access and project ownership checks precede upload handling. Production uploads pass an isolated non-root ClamAV INSTREAM scan before decoding or permanent storage. Only an explicit clean result is accepted; unavailable or inconclusive scans reject the upload. PostgreSQL and the scanner expose no host ports. Freshclam updates signatures on a separate outbound network. CI gates commit-tagged image publication and the health-checked SSH deployment. See [deployment details](docs/DEPLOYMENT.md).
+
 ## Validation and cost
 
 Keep a ledger covering media analysis, frame checks, all reviews, reasoning tokens where reported, retries and optional image previews. Preserve budget controls without silently substituting a weaker model during a quality-critical decision. Record the actual model and effort used.

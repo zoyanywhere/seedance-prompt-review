@@ -69,6 +69,31 @@ def signin(client, email="admin@example.test", password="strong-admin-passphrase
     return response.json()["csrf"]
 
 
+def test_rejected_upload_is_never_decoded_or_stored(monkeypatch):
+    from fastapi import HTTPException
+    import app.main as main
+    from app.db import Media
+    calls = []
+    def reject(blob):
+        calls.append("scan")
+        raise HTTPException(422, "Rejected by scanner")
+    def decode(*args):
+        raise AssertionError("Rejected bytes must never reach a decoder")
+    monkeypatch.setattr(main, "scan_upload", reject)
+    monkeypatch.setattr(main, "inspect_media", decode)
+    with TestClient(app) as client:
+        csrf = signin(client)
+        project = client.post("/api/projects", json={"title": "Upload safety", "brief": "A test scene."},
+                              headers={"X-CSRF-Token": csrf}).json()
+        response = client.post(f"/api/projects/{project['id']}/media", data={"role": "Identity reference"},
+                               files={"file": ("reference.png", b"untrusted", "image/png")},
+                               headers={"X-CSRF-Token": csrf})
+        assert response.status_code == 422
+    assert calls == ["scan"]
+    with SessionLocal() as db:
+        assert list(db.scalars(select(Media))) == []
+
+
 def test_invitation_and_project_isolation():
     with TestClient(app) as client:
         csrf = signin(client)

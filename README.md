@@ -86,6 +86,8 @@ Never commit `.env`, API keys, uploaded media, or user prompts. Use `.env.exampl
 
 ## Container security and upgrades
 
+Production deployment for **promptlab.zoyanywhere.com** uses the existing Traefik `web-network`, commit-tagged GHCR images, and a separate ClamAV container. Uploads must pass scanning before media decoding or storage. See [deployment and first-admin instructions](docs/DEPLOYMENT.md) for server environment variables, SSH secrets, backups, and rollout behavior.
+
 The app image uses a multi-stage build and version-pinned Python base image. The app runs as a dedicated non-root user with a read-only root filesystem, an explicit media volume, dropped Linux capabilities, `no-new-privileges`, a health check, and resource limits. PostgreSQL is reachable only on an internal network. The app listens on the host loopback interface, ready for a TLS reverse proxy at deployment. Containers do not receive the Docker socket or privileged mode.
 
 Dependencies and base images receive weekly Dependabot update PRs. CI checks builds, tests, dependency advisories, container vulnerabilities, and obvious accidental secrets. Production upgrades should use reviewed immutable images with a rollback path; application containers do not silently self-update at startup. See the [project brief](project-brief.en.json) for the full security and maintenance requirements.
