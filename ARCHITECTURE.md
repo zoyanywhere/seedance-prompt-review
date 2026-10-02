@@ -46,3 +46,7 @@ New projects default to agent-proposed duration. Existing projects keep their pr
 Keep a ledger covering media analysis, frame checks, all reviews, reasoning tokens where reported, retries and optional image previews. Preserve budget controls without silently substituting a weaker model during a quality-critical decision. Record the actual model and effort used.
 
 Compare first-generation requirement coverage, artistic/film quality assessed by creator or professors, regeneration count and total cost per accepted video. Model benchmarks inform selection but do not prove Seedance-specific success. Evaluate generated video outputs before claiming an improvement. No guarantee of first-pass success or viral reach is made.
+
+## Production profiles and reference library
+
+Film & Scene and Short & Ad share the graph but use project-specific settings and a versioned six-file Master library. The director and specialists receive role-specific entries. The final five-block contract is checked by the deterministic linter and the independent audit; failures return to the repair supervisor. Existing projects retain the legacy workflow until explicitly profiled. See [production profiles](docs/PRODUCTION-PROFILES.md) for adaptation rules, compatibility and validation limits.

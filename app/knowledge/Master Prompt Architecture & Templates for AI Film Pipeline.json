@@ -1,0 +1,51 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "prompt_system_metadata": {
+        "title": "Master Prompt Architecture & Templates for AI Film Pipeline",
+        "version": "1.0.0",
+        "encoding": "UTF-8",
+        "target_engines": [
+            "Claude 3.5 / ChatGPT (System Prompts)",
+            "Midjourney / FLUX.1 / SDXL / Soul 2.0 (Asset Image Prompts)",
+            "Runway Gen-3 / Kling / Sora / Luma / Higgsfield / Wan (Video Generation Prompts)"
+        ]
+    },
+    "prompts": {
+        "prompt_01_llm_system_prompt_director": {
+            "name": "LLM Technical Director & Shot Prompt Architect",
+            "target_tool": "Claude (Project System Prompt) / ChatGPT (Custom Instructions)",
+            "role": "Converts brief scene ideas into deterministic 5-block video diffusion prompts.",
+            "system_prompt_text": "You are the Lead Technical Director and Prompt Architect for an advanced hybrid AI filmmaking pipeline using 3D Previs and Video Diffusion Models.\n\nYour role is to take my scene description and convert it into a deterministic, high-precision video generation prompt following the strict 5-Block Hierarchy:\n\nCRITICAL PROMPT RULES:\n1. The first 20% of the prompt holds 80% of attention weight. Visual identity MUST be bound to reference images, not described in words.\n2. NEVER describe physical traits (hair, clothing, color) in text if image references are attached. Only describe role, emotion, interaction, and physics.\n3. Always include the mandatory consistency line: \"Characters, environments, and props 100% strictly match reference images.\"\n4. Always enforce clean audio separation: \"SFX only, no background music.\"\n5. Never allow internal camera cuts within a single shot prompt.\n\nOUTPUT FORMAT:\nGenerate the response strictly using these 5 blocks:\n\n[BLOCK 1: SCENE CONTEXT & CINEMATOGRAPHY]\n- 1-2 concise sentences defining setting, world physics, and core action.\n- Exact lens specification (e.g., 24mm wide / 50mm normal / 85mm portrait), camera motion vector (e.g., tracking, dolly-in, locked chase), and directional lighting formula (e.g., warm golden hour, long harsh dynamic shadows).\n\n[BLOCK 2: ACTIVE REFERENCES & BINDING]\n- Explicit mapping of attached inputs:\n  * Ref Video: Structural motion, timing, and camera guide ONLY (ignore grey clay topology).\n  * Ref Image 1: [Primary Entity Name] visual identity and costume.\n  * Ref Image 2: [Secondary Entity / Hero Prop / Environment Plate].\n- Consistency Anchor: \"Characters, environments, and props 100% strictly match reference images.\"\n- Positional Lock: \"All entities remain locked to their designated 3D spatial coordinates.\"\n\n[BLOCK 3: ACTION BEATS & TIMING]\n- Chronological breakdown matching the 3D previs by second:\n  * 0.0s - Xs: [Anticipation and initial movement]\n  * Xs - Ys: [Apex of action / physical interaction / impact]\n  * Ys - Zs: [Follow-through, recovery, and settling motion]\n\n[BLOCK 4: LOCKS & CONSTRAINTS]\n- Negative directives: \"SFX only, no background music. No morphing geometry, no extra limbs, no phantom entities, no unprompted camera pans, no internal cuts.\"\n\n[BLOCK 5: ANIMATION & PHYSICS]\n- Physical mass instructions: \"Apply realistic physical weight, visible tension before movement, clean weight distribution on impact, clear deceleration follow-through.\"\n\nRespond only with the completed prompt block in English."
+        },
+        "prompt_02_video_shot_master_template": {
+            "name": "5-Block Video Diffusion Execution Template",
+            "target_tool": "Video Generation Engines (Video-to-Video / Multi-Modal Mode)",
+            "structure_blocks": {
+                "block_1_scene_context_cinematography": "Cinematic [GENRE: sci-fi / fantasy / action / drama] sequence set in [ENVIRONMENT: e.g., an industrial corridor / rain-soaked alley / desert road]. Grounded physical realism with heightened kinetic weight. Cinematography: [FOCAL_LENGTH: e.g., 24mm wide-angle prime lens], [CAMERA_MOTION_VECTOR: e.g., dynamic low-angle forward tracking shot], [LIGHTING_FORMULA: e.g., low directional warm key light, long harsh cast shadows, deep atmospheric haze].",
+                "block_2_active_references_binding": "The attached video reference is a structural motion, timing, and camera tracking guide ONLY; ignore grey clay shading and primitive geometry. Map visual identity and anatomy of Image Ref 1 strictly onto the primary figure. Map visual identity of Image Ref 2 strictly onto the secondary figure / hero object. Characters, environments, and props 100% strictly match reference images. All entities remain locked to their assigned spatial coordinates without drifting.",
+                "block_3_action_beats_timing": "0.0s - 1.2s: [ENTITY_A] initiates movement, anticipating action while camera tracks parallel.\n1.2s - 2.5s: Primary physical interaction: [CORE_ACTION_OR_STUNT_APEX] reaches peak moment; visible deceleration and contact friction.\n2.5s - 4.0s: Follow-through and stabilization: [ENTITY_A] settles into final stance; secondary elements (clothing, hair) follow momentum to a complete rest.",
+                "block_4_locks_constraints": "SFX only, strictly no background music. Zero morphing geometry, zero phantom objects, zero extra limbs, no unprompted camera pans, zero internal cuts within the shot.",
+                "block_5_animation_physics": "Apply classic physical weight: visible muscle tension before acceleration, natural weight distribution on contact, clear inertia and momentum follow-through on all moving parts."
+            },
+            "compiled_text_raw": "[BLOCK 1: SCENE CONTEXT & CINEMATOGRAPHY]\nCinematic [GENRE] sequence set in [ENVIRONMENT]. Grounded physical realism with heightened kinetic weight. Cinematography: [FOCAL_LENGTH], [CAMERA_MOTION_VECTOR], [LIGHTING_FORMULA].\n\n[BLOCK 2: ACTIVE REFERENCES & BINDING]\nThe attached video reference is a structural motion, timing, and camera tracking guide ONLY; ignore grey clay shading and primitive geometry. Map visual identity and anatomy of Image Ref 1 strictly onto the primary figure. Map visual identity of Image Ref 2 strictly onto the secondary figure / hero object. Characters, environments, and props 100% strictly match reference images. All entities remain locked to their assigned spatial coordinates without drifting.\n\n[BLOCK 3: ACTION BEATS & TIMING]\n0.0s - 1.2s: [ENTITY_A] initiates movement, anticipating action while camera tracks parallel.\n1.2s - 2.5s: Primary physical interaction: [CORE_ACTION_OR_STUNT_APEX] reaches peak moment; visible deceleration and contact friction.\n2.5s - 4.0s: Follow-through and stabilization: [ENTITY_A] settles into final stance; secondary elements (clothing, hair) follow momentum to a complete rest.\n\n[BLOCK 4: LOCKS & CONSTRAINTS]\nSFX only, strictly no background music. Zero morphing geometry, zero phantom objects, zero extra limbs, no unprompted camera pans, zero internal cuts within the shot.\n\n[BLOCK 5: ANIMATION & PHYSICS]\nApply classic physical weight: visible muscle tension before acceleration, natural weight distribution on contact, clear inertia and momentum follow-through on all moving parts."
+        },
+        "prompt_03_asset_entity_turnaround": {
+            "name": "Entity / Character Model Sheet Generator",
+            "target_tool": "Midjourney / FLUX.1 / SDXL / Soul 2.0",
+            "purpose": "Creates multi-angle turnaround sheets with locked anatomy and neutral isolation.",
+            "prompt_text": "Character model turnaround sheet of [CHARACTER_NAME_OR_ARCHETYPE], [VISUAL_ART_STYLE: e.g., stylized 3D animation feature film style]. Four consistent full-body poses arranged cleanly side-by-side in one horizontal frame: neutral front view, three-quarter front view, profile side view, and three-quarter back view, accompanied by two isolated facial expression callouts in the upper corner (neutral, intense reaction). Proportions: stylized volumetric anatomy, clearly defined silhouette optimized for 3D layout translation. Costume and features: [CLOTHING_SILHOUETTE_HAIRSTYLE_ACCESSORIES_HIGH_CONTRAST]. Lighting: neutral, balanced studio three-point illumination, delicate ambient occlusion along structural folds, sharp outer edge definition. Background: pure flat uniform light grey (#D6D6D6), completely isolated asset sheet, zero background clutter, zero environmental elements, production-ready reference sheet."
+        },
+        "prompt_04_asset_hero_prop_turnaround": {
+            "name": "Hero Prop / Object Model Sheet Generator",
+            "target_tool": "Midjourney / FLUX.1 / SDXL / Soul 2.0",
+            "purpose": "Creates isolated multi-view references for weapons, vehicles, artifacts, and tools.",
+            "prompt_text": "Hero prop turnaround concept sheet of [PROP_DEVICE_ARCHETYPE], [VISUAL_ART_STYLE]. Cleanly arranged: 3/4 perspective view, direct side elevation, direct front view, top-down view. Visual attributes: [FORM_LANGUAGE], [PRIMARY_MATERIAL: matte wood, polished metal, worn stone], subtle functional accents, clean edge definition. Studio key and fill lighting, minimal specular glare, subtle contact shadow beneath base. Solid clean white background (#FFFFFF), perfectly isolated, no environment, no hands holding object, master design reference."
+        },
+        "prompt_05_asset_environment_plate": {
+            "name": "Clean Environment Matte Plate Generator",
+            "target_tool": "Midjourney / FLUX.1 / SDXL / Soul 2.0",
+            "purpose": "Creates background plates with strong lighting and zero moving characters.",
+            "prompt_text": "Cinematic wide establishing background plate of [LOCATION_SETTING], [VISUAL_ART_STYLE]. Ultra-wide 16:9 cinematic vista, clear foreground, midground, background separation, strong atmospheric depth, distinct horizon. Lighting: [DIRECTIONAL_LIGHTING_FORMULA: e.g., low directional golden hour sun at 45 degrees, casting long harsh dynamic shadows across surfaces], atmospheric haze layers, strong volumetric depth. Empty scene, zero dynamic entities, zero moving foreground objects, clean environment plate ready for staging."
+        }
+    }
+}

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cinematic Visual Styles Prompt Library",
+  "version": "1.0.0",
+  "description": "Strukturierte Bibliothek von 20 visuellen Film- und Animationsstilen für generative Text- und Video-Diffusionsmodelle.",
+  "styles": [
+    {
+      "id": "STYLE_01",
+      "name": "Stylisierter Cartoon-3D-Look",
+      "reference_style": "Minions-Stil",
+      "category": "Stylized 3D Animation",
+      "prompt_template": "Stylized 3D CGI character animation, smooth rubbery materials and matte surfaces, exaggerated pill-shaped cartoon proportions, vibrant highly saturated primary colors, soft studio bounce lighting, dynamic comic wide-angle framing, subsurface scattering on smooth skin, playful cinematic render, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_02",
+      "name": "Prähistorischer Animations-Look",
+      "reference_style": "Ice-Age-Stil",
+      "category": "Stylized 3D Animation",
+      "prompt_template": "Stylized prehistoric 3D CGI animation, detailed procedural fur simulation with individual dynamic strands, expressive caricature facial anatomy, cold cinematic rim lighting with turquoise ice reflections, fine snow and frost textures, sweeping landscape framing, stylized feature film render, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_03",
+      "name": "Gotisch-Expressionistischer Look",
+      "reference_style": "Tim-Burton-Stil",
+      "category": "Dark Fantasy / Expressionism",
+      "prompt_template": "Cinematic wide shot, gothic dark fantasy aesthetic, German expressionist architecture with sharp crooked angles and twisted silhouettes, extreme desaturated palette with pale skin tones and pitch-black shadows, eerie volumetric fog, shot on 35mm anamorphic lens, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_04",
+      "name": "Symmetrischer Pastell-Look",
+      "reference_style": "Wes-Anderson-Stil",
+      "category": "Cinematic Auteur / Vintage",
+      "prompt_template": "Perfect eye-level symmetrical static shot, flat dollhouse composition, carefully curated pastel color grading in mint green and warm mustard yellow, soft natural daylight, vintage 35mm film stock, crisp storybook framing with straight horizontal lines, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_05",
+      "name": "Monumentaler Sci-Fi-Look",
+      "reference_style": "Denis-Villeneuve-Stil",
+      "category": "Hard Sci-Fi / Brutalism",
+      "prompt_template": "Epic wide-angle slow tracking shot, massive monolithic brutalist structures towering overhead, hazy dust-filled atmospheric scale, minimalist desaturated earth tones, soft overcast lighting, shot on 65mm IMAX format, grounded realistic cinematography, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_06",
+      "name": "Klassischer Chiaroscuro-Look",
+      "reference_style": "Film-Noir-Stil",
+      "category": "Classic Cinema / Monochrome",
+      "prompt_template": "Low-angle medium shot, deep chiaroscuro lighting, sharp venetian blind shadows cutting through heavy cigarette smoke, high-contrast monochrome black and white, rain-slicked reflective surfaces, vintage prime lens with shallow depth of field, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_07",
+      "name": "Dystopischer Neon-Look",
+      "reference_style": "Cyberpunk-Stil",
+      "category": "Sci-Fi / Cyberpunk",
+      "prompt_template": "Slow tracking shot at ground level, neon cyan and magenta reflections spilling across wet asphalt, dense industrial smog and heavy rain, horizontal blue streak anamorphic lens flares, sharp shallow depth of field, moody low-key cinematic lighting, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_08",
+      "name": "Haptischer Knet- & Puppen-Look",
+      "reference_style": "Claymation-Stil",
+      "category": "Stop-Motion / Practical",
+      "prompt_template": "Macro static shot, authentic stop-motion animation, handcrafted plasticine clay textures with subtle visible fingerprints, deliberate 12fps staggered motion, miniature studio tungsten lighting, tilt-shift shallow depth of field, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_09",
+      "name": "Analoger Fantasy-Look der 80er",
+      "reference_style": "Jim-Henson-Puppen-Stil",
+      "category": "Retro Fantasy / Animatronics",
+      "prompt_template": "Medium slow push-in shot, 1980s fantasy cinema aesthetic, practical animatronics and foam-latex creature design, heavy 35mm film grain, glowing dust motes drifting in golden volumetric rays, warm nostalgic color grading, soft vintage lens bloom, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_10",
+      "name": "Minimalistischer Editorial-Look",
+      "reference_style": "Avantgarde-Fashion-Stil",
+      "category": "High Fashion / Commercial",
+      "prompt_template": "Slow-motion 60fps orbit tracking shot, avant-garde high-fashion editorial, stark brutalist concrete background, harsh directional studio strobe light, desaturated metallic color palette, razor-sharp garment textures, chiseled emotionless expressions, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_11",
+      "name": "Verstörender Magnetband-Look",
+      "reference_style": "Analog-Horror-Stil",
+      "category": "Found Footage / Horror",
+      "prompt_template": "Unstable handheld bodycam POV, degraded magnetic tape distortion with tracking line glitches, interlaced scan lines, blown-out direct flashlight beam cutting into pitch-black darkness, raw grainy sensor noise, unsettling realism, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_12",
+      "name": "Malerischer Anime-Look",
+      "reference_style": "Makoto-Shinkai-Stil",
+      "category": "Anime / Modern 2D",
+      "prompt_template": "Cinematic wide establishing shot, vibrant modern anime aesthetic, hand-painted digital background art, hyper-detailed volumetric cumulus clouds with intense crepuscular sunbeams, shimmering atmospheric light flares, rich gradients in deep azure and radiant magenta, crystalline water reflections, crisp emotive framing, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_13",
+      "name": "Hyper-Stylisierter Comic-Look",
+      "reference_style": "Spider-Verse-Stil",
+      "category": "Hybrid Animation / Pop Art",
+      "prompt_template": "Dynamic low-angle action shot, hybrid 2D/3D comic-book animation, deliberate 12fps stepped character motion against 24fps environment, visible halftone Ben-Day dots and offset CMYK chromatic aberration, hand-drawn graphical speed lines, pop-art crosshatching, vibrant punchy neon palette, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_14",
+      "name": "Sonnengetränkter Western-Look",
+      "reference_style": "Sergio-Leone-Stil",
+      "category": "Spaghetti Western / Classic Cinema",
+      "prompt_template": "Extreme close-up on intense weathered eyes cutting to wide desert shot, scorching midday hard sun casting pitch-black harsh shadows, bleached desert palette in sepia and dusty ochre, heat shimmer distorting distant horizons, gritty windblown dust motes, vintage Techniscope anamorphic lens, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_15",
+      "name": "Kinetischer Hyperrealismus-Look",
+      "reference_style": "David-Fincher-Stil",
+      "category": "Thriller / High Precision",
+      "prompt_template": "Calculated robotic tracking shot on a smooth motion-control rig, clinical low-key desaturated green-and-yellow color grade, razor-sharp digital sensor clarity, moody practical tungsten desk lamps, reflective polished surfaces, meticulously controlled micro-details, zero handheld motion, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_16",
+      "name": "Kosmischer Body-Horror-Look",
+      "reference_style": "H.R.-Giger-Stil",
+      "category": "Sci-Fi Horror / Surrealism",
+      "prompt_template": "Slow creeping dolly-in shot, biomechanical surrealism, glossy chitinous exoskeletons fused with ribbed industrial tubing, slimy viscous fluid sheen, monochrome desaturated bone-white and oily black palette, eerie subterranean green ambient illumination, macabre high-contrast textures, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_17",
+      "name": "Traumhafter Melancholie-Look",
+      "reference_style": "Wong-Kar-Wai-Stil",
+      "category": "Arthouse / Poetic Drama",
+      "prompt_template": "Intimate medium shot, step-printed 6fps slow-motion with organic motion blur, saturated atmospheric neon green and warm amber glow, heavy atmospheric rain mist, framed through rain-streaked window glass, shallow depth of field, vintage 35mm film stock, nostalgic poetic pacing, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_18",
+      "name": "Klassischer 90er-Cel-Animation-Look",
+      "reference_style": "Ghibli-Stil",
+      "category": "Traditional 2D / Fantasy",
+      "prompt_template": "Gentle eye-level panning shot, nostalgic 1990s hand-drawn cel animation, rich gouache background paintings, soft dappled forest sunlight through leaves, vibrant pastoral moss-greens and sky-blues, subtle film grain, organic hand-inked line art, whimsical serene atmosphere, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_19",
+      "name": "Hochenergetischer Wüsten-Action-Look",
+      "reference_style": "George-Miller-Stil",
+      "category": "Action / High-Octane",
+      "prompt_template": "High-speed camera tracking close to the ground, oversaturated blazing orange sky contrasting with vivid turquoise accents, harsh directional desert sunlight, flying particulate sand and exhaust soot, high-shutter-speed kinetic impact without motion blur, wide-angle distortion, [HIER DEINE SZENE EINFÜGEN]"
+    },
+    {
+      "id": "STYLE_20",
+      "name": "Psychedelischer Neon-Splatter-Look",
+      "reference_style": "Panos-Cosmatos-Stil",
+      "category": "Psychedelic Horror / Synthwave",
+      "prompt_template": "Slow hypnotic push-in shot, 1980s heavy-metal fantasy aesthetic, blinding monochromatic crimson-red wash punctuated by electric cobalt-blue rim lights, thick dense fog drifting through sharp silhouettes, vintage anamorphic lens flares, rich heavy film grain, hallucinatory trance-like atmosphere, [HIER DEINE SZENE EINFÜGEN]"
+    }
+  ]
+}

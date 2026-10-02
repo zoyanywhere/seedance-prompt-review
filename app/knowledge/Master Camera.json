@@ -1,0 +1,609 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cinema & Specialty Camera Registry",
+  "description": "Strukturierte Übersicht digitaler Kinokameras, analoger Systeme und spezialisierter Aufnahmegeräte",
+  "camera_systems": {
+    "digital_cinema_major_brands": {
+      "red_digital_cinema": [
+        {
+          "model": "RED V-RAPTOR [X] 8K VV / XL [X] 8K VV",
+          "sensor": {
+            "format": "VistaVision",
+            "resolution": "8K",
+            "dimensions_mm": "40.96 x 21.60",
+            "megapixels": 35.4,
+            "shutter_type": "Global Shutter"
+          },
+          "max_framerate": {
+            "8k_17_9": 120,
+            "4k": 240
+          },
+          "key_features": [
+            "Global Vision Highlight Recovery",
+            "XL-Version bietet interne elektronische ND-Filter und Studio-Power-Optionen"
+          ]
+        },
+        {
+          "model": "RED V-RAPTOR 8K VV / XL 8K VV (Standard)",
+          "sensor": {
+            "format": "VistaVision",
+            "resolution": "8K",
+            "shutter_type": "Fast Rolling Shutter"
+          },
+          "max_framerate": {
+            "8k": 120,
+            "2.4k": 440
+          },
+          "key_features": ["Hohe Bildraten im Großformat"]
+        },
+        {
+          "model": "RED V-RAPTOR 8K S35 / XL 8K S35",
+          "sensor": {
+            "format": "Super 35",
+            "resolution": "8K",
+            "dimensions_mm": "26.21 x 13.82",
+            "shutter_type": "Rolling Shutter"
+          },
+          "key_features": ["8K-Auflösung ohne Vignettierung für klassische Super-35-Optiken"]
+        },
+        {
+          "model": "RED KOMODO-X",
+          "sensor": {
+            "format": "Super 35",
+            "resolution": "6K",
+            "megapixels": 19.9,
+            "shutter_type": "Global Shutter"
+          },
+          "max_framerate": {
+            "6k": 80,
+            "4k": 120
+          },
+          "key_features": [
+            "Kompakte Box-Form",
+            "Integriertes V-Mount-Interface",
+            "CFexpress Typ B"
+          ]
+        },
+        {
+          "model": "RED KOMODO (Original)",
+          "sensor": {
+            "format": "Super 35",
+            "resolution": "6K",
+            "shutter_type": "Global Shutter"
+          },
+          "max_framerate": {
+            "6k": 40
+          },
+          "key_features": ["Kompakter Formfaktor mit REDCODE RAW"]
+        },
+        {
+          "model_family": "RED DSMC2 (Rental-Klassiker)",
+          "models": [
+            {
+              "name": "Monstro 8K VV",
+              "sensor_format": "VistaVision / Full-Frame",
+              "resolution": "8K RAW"
+            },
+            {
+              "name": "Helium 8K S35",
+              "sensor_format": "Super 35",
+              "resolution": "8K"
+            },
+            {
+              "name": "Gemini 5K S35",
+              "sensor_format": "Super 35",
+              "resolution": "5K",
+              "specialty": "Dual-Native-ISO für Low-Light"
+            }
+          ]
+        }
+      ],
+      "arri": [
+        {
+          "model": "ARRI ALEXA 35",
+          "sensor": {
+            "name": "ALEV 4 CMOS",
+            "format": "Super 35",
+            "resolution": "4.6K"
+          },
+          "dynamic_range_stops": 17,
+          "color_science": "REVEAL Color Science",
+          "industry_status": "High-End-Standard für Kino und Serien"
+        },
+        {
+          "model": "ARRI ALEXA Mini LF",
+          "sensor": {
+            "name": "ALEV 3 A2X CMOS",
+            "format": "Large Format",
+            "resolution": "4.5K"
+          },
+          "chassis": "Kompakter Carbon-Body",
+          "target_segment": "Großformat-Look, Handheld- und Gimbal-Einsatz"
+        },
+        {
+          "model": "ARRI ALEXA LF",
+          "sensor": {
+            "name": "ALEV 3 A2X CMOS",
+            "format": "Large Format",
+            "resolution": "4.5K"
+          },
+          "chassis": "Großes Studio-Gehäuse mit separaten 12V/24V-Ausgängen"
+        },
+        {
+          "model": "ARRI AMIRA",
+          "sensor": {
+            "name": "ALEV 3",
+            "format": "Super 35"
+          },
+          "form_factor": "Schulterkamera für ENG/Dokumentarfilm"
+        }
+      ],
+      "sony_cinealta_and_cinema_line": [
+        {
+          "model": "Sony VENICE 2",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution_options": ["8.6K (8640 x 5760)", "6K"],
+            "interchangeable_block": true
+          },
+          "dynamic_range_stops": 16,
+          "internal_recording": "16-Bit X-OCN RAW",
+          "accessories": ["Rialto 2 Tethered Extension System"]
+        },
+        {
+          "model": "Sony BURANO",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "8.6K"
+          },
+          "key_features": [
+            "In-Body Image Stabilization (IBIS)",
+            "Elektronisch variabler ND-Filter",
+            "Fast Hybrid AF"
+          ]
+        },
+        {
+          "model": "Sony FX9",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "6K Oversampled auf 4K DCI"
+          },
+          "mount": "E-Mount",
+          "features": ["Elektronisch variabler ND-Filter"]
+        },
+        {
+          "model": "Sony FX6",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "4.2K"
+          },
+          "max_framerate": {
+            "4k": 120
+          },
+          "native_iso": [800, 12800]
+        },
+        {
+          "model": "Sony FX3",
+          "sensor": {
+            "format": "Full-Frame",
+            "megapixels": 12
+          },
+          "form_factor": "Kompakte DSLM-Bauform mit aktivem Lüfter und XLR-Handgriff"
+        },
+        {
+          "model": "Sony FX30",
+          "sensor": {
+            "format": "Super 35",
+            "megapixels": 26
+          },
+          "form_factor": "Kompakte DSLM-Bauform für Einstieg in Cine-Workflows"
+        },
+        {
+          "model": "Sony F65 / F55 CineAlta (Legacy)",
+          "significance": "Vorläufer der VENICE; F65 mit 8K-Rotationssensor für 4K-Ausgabe"
+        },
+        {
+          "model": "Sony HDC-F5500",
+          "sensor": {
+            "format": "Super 35"
+          },
+          "category": "Live-Event- und Broadcast-Systemkamera im Cine-Look"
+        }
+      ],
+      "blackmagic_design": [
+        {
+          "model": "Blackmagic URSA Cine 17K 65",
+          "sensor": {
+            "format": "65mm Großformat / Mittelformat",
+            "resolution": "17.520 x 4.800 (17K 2.2:1)"
+          },
+          "target_use": "IMAX- und 70mm-Großbildproduktionen"
+        },
+        {
+          "model": "Blackmagic URSA Cine 12K LF",
+          "sensor": {
+            "format": "Large Format (36 x 24 mm)",
+            "resolution": "12K",
+            "type": "RGBW-Sensor"
+          },
+          "storage": "Interne 8TB Speichermodule",
+          "mounts": ["LPL", "PL"]
+        },
+        {
+          "model": "Blackmagic URSA Mini Pro 12K",
+          "sensor": {
+            "format": "Super 35",
+            "resolution": "12.288 x 6.480"
+          },
+          "target_use": "VFX-Plates und High-Resolution-Sampling"
+        },
+        {
+          "model": "Blackmagic PYXIS 6K",
+          "sensor": {
+            "format": "Full-Frame (3:2 Open Gate)",
+            "resolution": "6K"
+          },
+          "form_factor": "Modulare Box-Kamera",
+          "mount_options": ["L-Mount", "PL-Mount", "EF-Mount"]
+        },
+        {
+          "model": "Blackmagic Cinema Camera 6K",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "6K"
+          },
+          "mount": "L-Mount",
+          "media": "CFexpress Typ B"
+        },
+        {
+          "model_family": "Blackmagic Pocket Cinema Camera (BMPCC)",
+          "variants": ["4K (MFT)", "6K G2 (S35)", "6K Pro (S35 mit internen NDs)"],
+          "recording_format": "Blackmagic RAW (BRAW)"
+        }
+      ],
+      "canon_cinema_eos": [
+        {
+          "model": "Canon Cinema EOS C400",
+          "sensor": {
+            "format": "Full-Frame BSI CMOS",
+            "resolution": "6K"
+          },
+          "mount": "RF-Mount",
+          "native_iso": [800, 3200, 12800],
+          "recording": "6K Cinema RAW Light bis 60p, 4K bis 120p"
+        },
+        {
+          "model": "Canon Cinema EOS C80",
+          "sensor": {
+            "format": "Full-Frame BSI CMOS",
+            "resolution": "6K"
+          },
+          "native_iso": [800, 3200, 12800],
+          "connectivity": "12G-SDI",
+          "form_factor": "Kompakter C70-Stil"
+        },
+        {
+          "model": "Canon Cinema EOS C500 Mark II",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "5.9K"
+          },
+          "features": ["Elektronische Bildstabilisierung", "Modularer Body"]
+        },
+        {
+          "model": "Canon Cinema EOS C300 Mark III",
+          "sensor": {
+            "format": "Super 35 DGO (Dual Gain Output)",
+            "resolution": "4K"
+          },
+          "dynamic_range_stops": 16
+        },
+        {
+          "model": "Canon Cinema EOS C70",
+          "sensor": {
+            "format": "Super 35 DGO",
+            "resolution": "4K"
+          },
+          "mount": "RF-Mount",
+          "features": ["Interne ND-Filter", "Kompaktes DSLM-artiges Gehäuse"]
+        },
+        {
+          "model": "Canon EOS R5 C",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "8K (45 MP)"
+          },
+          "type": "Foto/Cinema-Hybrid mit aktiver Lüftung für 8K 60p RAW"
+        }
+      ],
+      "kinefinity": [
+        {
+          "model": "MAVO Edge 8K",
+          "sensor": {
+            "format": "Full-Frame (3:2)",
+            "resolution": "8192 x 5460"
+          },
+          "max_framerate": {
+            "8k": 75
+          },
+          "features": [
+            "Internes ProRes RAW",
+            "Motorisierter e-ND",
+            "Dual-Native-ISO (800/3200)"
+          ]
+        },
+        {
+          "model": "MAVO Edge 6K",
+          "sensor": {
+            "format": "Full-Frame",
+            "resolution": "6K"
+          },
+          "native_iso": [800, 5120]
+        },
+        {
+          "model": "MAVO mark2 (LF & S35)",
+          "features": ["KineMOUNT für schnellen Objektivanschlusswechsel"]
+        }
+      ],
+      "dji_and_z_cam": [
+        {
+          "model": "DJI Ronin 4D (6K & 8K)",
+          "sensor": {
+            "name": "Zenmuse X9-6K / X9-8K",
+            "format": "Full-Frame"
+          },
+          "features": [
+            "Integriertes 4-Achsen-Gimbal",
+            "LiDAR-Fokussierung",
+            "Drahtlose Bildübertragung",
+            "RAW-Aufzeichnung im Gimbal-Arm"
+          ]
+        },
+        {
+          "model_family": "Z CAM E2 Flaggschiffe",
+          "variants": [
+            {
+              "model": "E2-F8",
+              "format": "Full-Frame",
+              "resolution": "8K",
+              "codecs": ["ZRAW", "ProRes"]
+            },
+            {
+              "model": "E2-F6",
+              "format": "Full-Frame",
+              "resolution": "6K"
+            },
+            {
+              "model": "E2-S6",
+              "format": "Super 35",
+              "resolution": "6K"
+            }
+          ],
+          "target_use": "Kompakte Rigs, VR und Multicam-Live-Setups"
+        }
+      ],
+      "panavision_digital": [
+        {
+          "model": "Panavision Millennium DXL2",
+          "distribution": "Rental only",
+          "sensor": {
+            "base": "RED Monstro 8K VV",
+            "format": "VistaVision",
+            "resolution": "8K"
+          },
+          "features": [
+            "Light Iron Color 2 Profil",
+            "Primo HDR-Sucher",
+            "Optik-Interface für Panavision Ultra Vista und Anamorphoten"
+          ]
+        }
+      ],
+      "panasonic_cinema": [
+        {
+          "model": "Panasonic VariCam 35 / VariCam LT",
+          "sensor": {
+            "format": "Super 35"
+          },
+          "significance": "Etablierte das Dual-Native-ISO-Konzept am Markt"
+        },
+        {
+          "model": "Panasonic Lumix BS1H / BGH1",
+          "form_factor": "Modulare Box-Kameras",
+          "sensor_variants": {
+            "BS1H": "6K Full-Frame",
+            "BGH1": "Micro Four Thirds"
+          },
+          "certifications": ["Netflix Approved"]
+        },
+        {
+          "model": "Panasonic AU-EVA1",
+          "sensor": {
+            "format": "Super 35",
+            "resolution": "5.7K"
+          },
+          "features": ["Dual-Native-ISO", "EF-Mount"]
+        }
+      ]
+    },
+    "hybrid_and_large_format_digital": [
+      {
+        "model": "Fujifilm GFX 100 II",
+        "sensor": {
+          "format": "Medium Format (44 x 33 mm)",
+          "megapixels": 102
+        },
+        "video_features": [
+          "8K 30p",
+          "Interne ProRes-Aufnahme",
+          "Anamorphic De-Squeeze Modi",
+          "Timecode-In/Out"
+        ]
+      },
+      {
+        "model": "Nikon Z9 / Z8",
+        "sensor": {
+          "format": "Full-Frame Stacked CMOS",
+          "megapixels": 45.7,
+          "shutter_type": "Reiner elektronischer Verschluss (kein mechanischer Verschluss)"
+        },
+        "video_features": [
+          "8.3K N-RAW bis 60 fps",
+          "4.1K N-RAW bis 120 fps",
+          "RED-Technologieintegration nach Firmenübernahme"
+        ]
+      }
+    ],
+    "high_speed_and_slow_motion": [
+      {
+        "manufacturer": "Vision Research",
+        "models": [
+          {
+            "name": "Phantom Flex4K",
+            "performance": {
+              "4k": "bis 1.000 fps",
+              "2k": "bis 2.000 fps"
+            },
+            "status": "Industriestandard für Spielfilm-Slow-Motion"
+          },
+          {
+            "name": "Phantom vEO4K / TMX-Serie",
+            "performance": {
+              "industrial_use": "bis mehrere zehntausend fps bei reduzierter Auflösung"
+            }
+          }
+        ]
+      },
+      {
+        "manufacturer": "Freefly Systems",
+        "models": [
+          {
+            "name": "Ember S5K",
+            "performance": {
+              "5k": "bis 600 fps"
+            },
+            "features": ["Interne High-Speed-SSD", "Kompakt für Gimbal/Drohne"]
+          },
+          {
+            "name": "Ember S2.5K",
+            "performance": {
+              "2.5k": "bis knapp 3.000 fps"
+            }
+          }
+        ]
+      },
+      {
+        "manufacturer": "Kron Technologies",
+        "models": [
+          {
+            "name": "Chronos 4K12",
+            "performance": "4K bis ca. 1.000 fps"
+          },
+          {
+            "name": "Chronos 2.1-HD",
+            "performance": "Full HD bis über 2.000 fps"
+          }
+        ],
+        "category": "Autonome Handheld-High-Speed-Kameras"
+      },
+      {
+        "manufacturer": "Photron / NAC",
+        "models": ["Photron FASTCAM", "NAC Memrecam"],
+        "performance": "Bis zu 1.000.000 fps bei reduzierter Auflösung",
+        "use_case": "Ballistik, Sprengungen und FX-Detonationen"
+      }
+    ],
+    "immersive_and_large_scale": [
+      {
+        "model": "Sphere Studios 'Big Sky'",
+        "sensor": {
+          "size": "3 Zoll Einzel-Sensor",
+          "resolution": "18K x 18K (ca. 316 MP)"
+        },
+        "max_framerate": 120,
+        "use_case": "Vegas Sphere Dome-Projektion"
+      },
+      {
+        "model": "Blackmagic URSA Cine Immersive",
+        "sensor": {
+          "type": "Stereoskopisch dual 8K",
+          "resolution_per_eye": "8160 x 7200"
+        },
+        "use_case": "Apple Immersive Video (Vision Pro) und VR-Kino"
+      },
+      {
+        "model": "Insta360 Titan",
+        "sensor": {
+          "array": "8x Micro Four Thirds",
+          "resolution": "11K Mono / 10K 3D 360-Grad"
+        },
+        "color_depth": "10-Bit"
+      }
+    ],
+    "photochemical_film_analog": [
+      {
+        "system": "IMAX MSM 9802 & MKIV",
+        "format": "15-Perf 65mm (horizontaler Transport)",
+        "effective_resolution": "ca. 18K äquivalent",
+        "directors": ["Christopher Nolan"]
+      },
+      {
+        "system": "Panavision Millennium XL2",
+        "format": "35mm Film",
+        "lens_optimization": "Panavision Anamorphic"
+      },
+      {
+        "system": "ARRI ARRICAM ST / LT & ARRIFLEX 435 / 235",
+        "format": "35mm Film (Standard 3-Perf / 4-Perf)"
+      },
+      {
+        "system": "ARRIFLEX 416 & Aaton XTR Prod",
+        "format": "Super 16mm",
+        "use_case": "Indie-Produktionen, Musikvideos, körnige Filmästhetik"
+      }
+    ],
+    "historical_milestones_digital_cinema": [
+      {
+        "model": "Sony HDW-F900 CineAlta",
+        "year": 2002,
+        "significance": "Erster komplett digitaler Hollywood-Großfilm in 24p: 'Star Wars: Episode II'"
+      },
+      {
+        "model": "Thomson Grass Valley Viper FilmStream",
+        "significance": "Erstes unkomprimiertes RAW-RGB-Signal direkt vom Sensor ('Zodiac', 'Collateral')"
+      },
+      {
+        "model": "Panavision Genesis",
+        "significance": "Frühe digitale 35mm-Spielfilm-Adaption ('Superman Returns', 'Apocalypto')"
+      },
+      {
+        "model": "Silicon Imaging SI-2K",
+        "significance": "Erster Oscar für Beste Kamera an Digitalfilm ('Slumdog Millionaire')"
+      },
+      {
+        "model": "Aaton Penelope Delta",
+        "significance": "Super-35-CCD mit mechanischem Umlaufverschluss zur Emulation des Analogfilms"
+      }
+    ],
+    "boutique_experimental_and_rigs": [
+      {
+        "model": "Digital Bolex D16",
+        "sensor": "Kodak CCD Super 16",
+        "aesthetic": "Organische 16mm-Filmfarben"
+      },
+      {
+        "model": "Fran 8K",
+        "features": ["Global Shutter", "Modularer 8K-Independent-Body"]
+      },
+      {
+        "system": "Cameron-Pace Fusion 3D Rig",
+        "type": "Stereoskopisches Beam-Splitter-Doppelkamera-Rig",
+        "use_case": "'Avatar' 3D-Produktion mit verstellbarem Interaxialabstand"
+      },
+      {
+        "system": "HydroFlex & Gates Unterwasser-Housings",
+        "type": "Tauch- und Druckgehäuse mit Signal- und Optik-Remotesteuerung",
+        "accommodates": ["ARRI ALEXA 35", "Sony VENICE 2"]
+      }
+    ]
+  }
+}

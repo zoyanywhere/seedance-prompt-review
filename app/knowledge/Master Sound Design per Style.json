@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cinematic Sound Design & Foley Prompt Library",
+  "version": "1.0.0",
+  "description": "20 kuratierte Sound-Design- und Foley-Profile für Audio-Diffusionsmodelle, abgestimmt auf die 20 visuellen Filmstile.",
+  "audio_profiles": [
+    {
+      "id": "AUDIO_01",
+      "style_name": "Stylized Cartoon Slapstick",
+      "reference_style": "Minions Style",
+      "matching_visual_id": "STYLE_01",
+      "acoustic_profile": "Exaggerated slapstick foley, rubbery popping noises, fast slide whistles, comical whooshes, and punchy cartoon impacts.",
+      "audio_prompt_block": "Exaggerated cartoon slapstick sound effects, rubbery popping sounds, comical slide whistle, high-pitched squeaks, spring boing impact, wooden mallet hit, dynamic zany foley, dry mix"
+    },
+    {
+      "id": "AUDIO_02",
+      "style_name": "Prehistoric Animated Adventure",
+      "reference_style": "Ice Age Style",
+      "matching_visual_id": "STYLE_02",
+      "acoustic_profile": "Massive cracking glacier ice, tectonic low-frequency rumbles, footsteps crunching in deep snow, frantic claw scrambling on frozen lakes, and whistling polar winds.",
+      "audio_prompt_block": "Massive glacier ice cracking, deep low-frequency rumble, heavy snow crunching footsteps, comedic frantic scrambling on slippery ice, whistling polar wind, dynamic cinematic animation foley"
+    },
+    {
+      "id": "AUDIO_03",
+      "style_name": "Whimsical Gothic Dark Fantasy",
+      "reference_style": "Tim Burton Style",
+      "matching_visual_id": "STYLE_03",
+      "acoustic_profile": "Antique wind-up music boxes, mechanical ticking clockwork, creaking wooden floorboards, melancholic celesta chimes, dusty strings, and eerie howling wind through barren trees.",
+      "audio_prompt_block": "Gothic whimsical sound design, antique wind-up music box, ticking grandfather clockwork, creaking wooden floorboards, eerie whistling wind through dry branches, haunted celesta bells, cinematic dark fairy tale atmosphere"
+    },
+    {
+      "id": "AUDIO_04",
+      "style_name": "Dry, Tactile Vintage Foley",
+      "reference_style": "Wes Anderson Style",
+      "matching_visual_id": "STYLE_04",
+      "acoustic_profile": "Ultra-dry close-mic recording with almost zero room reverb: mechanical typewriter clicks, vinyl record crackle, leather shoe taps on parquet flooring, and crisp analog camera shutters.",
+      "audio_prompt_block": "Ultra-dry tactile foley, mechanical vintage typewriter keystrokes, crisp leather shoes tapping on parquet wood, vinyl record needle crackle, tactile switch clicks, close-mic analog room tone, minimal reverb"
+    },
+    {
+      "id": "AUDIO_05",
+      "style_name": "Monumental Sub-Bass & Tectonic Drones",
+      "reference_style": "Denis Villeneuve Style",
+      "matching_visual_id": "STYLE_05",
+      "acoustic_profile": "Bone-shaking sub-bass impacts, massive brass-like 'braam' hits, metallic resonance, howling desert sandstorms, and deep, oppressive low-frequency drone layers.",
+      "audio_prompt_block": "Massive cinematic sub-bass braam impact, earth-shaking tectonic low-frequency drone, howling desert wind storm, resonant metallic vibration, dark brutalist soundscape, IMAX theater sound design"
+    },
+    {
+      "id": "AUDIO_06",
+      "style_name": "Melancholic Film Noir",
+      "reference_style": "Classic Noir Style",
+      "matching_visual_id": "STYLE_06",
+      "acoustic_profile": "Continuous rain drumming on wet cobblestone, echoing footsteps in dark alleyways, striking a wooden match, metallic lighter snaps, and distant muted jazz trumpet echoes.",
+      "audio_prompt_block": "Heavy rain falling on urban asphalt, echoing footsteps in wet alleyway, striking a match, metallic lighter click, distant melancholic jazz trumpet reverberation, vintage 1940s film ambiance"
+    },
+    {
+      "id": "AUDIO_07",
+      "style_name": "Dystopian Industrial Synth Sound",
+      "reference_style": "Cyberpunk Style",
+      "matching_visual_id": "STYLE_07",
+      "acoustic_profile": "High-voltage neon sign hums, pneumatic air releases from heavy blast doors, distorted analog synth pulses, distorted radio chatter, and the low roar of passing hovercrafts.",
+      "audio_prompt_block": "Humming high-voltage neon sign, pneumatic air hiss from mechanical doors, distorted analog bass pulse, heavy rain hitting metal grates, futuristic hover vehicle flyby, dark synth-heavy cyberpunk ambience"
+    },
+    {
+      "id": "AUDIO_08",
+      "style_name": "Organic Tactile Stop-Motion Foley",
+      "reference_style": "Claymation Style",
+      "matching_visual_id": "STYLE_08",
+      "acoustic_profile": "Squishy, pliable clay handling, subtle damp squelches, miniature wooden prop clicks, and intimate fabric friction without modern digital sharpness.",
+      "audio_prompt_block": "Squishy pliable clay manipulation, subtle damp plasticine squelches, miniature wooden furniture clicking, dry fabric rustle, intimate close-up tactile foley, warm studio recording"
+    },
+    {
+      "id": "AUDIO_09",
+      "style_name": "1980s Retro Creature & Practical Effects",
+      "reference_style": "Jim Henson Style",
+      "matching_visual_id": "STYLE_09",
+      "acoustic_profile": "Subtle mechanical servo whirs mixed with organic animalistic growls, damp cave water drops, analog tape warmth, and shimmering vintage synthesizer chimes.",
+      "audio_prompt_block": "1980s practical creature vocalization, subtle mechanical servo whir, damp cavern dripping reverb, shimmering fantasy synth chimes, vintage analog tape warmth, nostalgic adventure foley"
+    },
+    {
+      "id": "AUDIO_10",
+      "style_name": "High-Fashion Avant-Garde Minimalist",
+      "reference_style": "Editorial Style",
+      "matching_visual_id": "STYLE_10",
+      "acoustic_profile": "Heavily compressed industrial sub-thuds, razor-sharp stiletto heel clicks echoing off bare concrete walls, followed by abrupt, vacuum-like dead silence.",
+      "audio_prompt_block": "Heavy compressed industrial sub-thud, sharp stiletto high-heels echoing on polished concrete, sterile acoustic reverb, sudden absolute silence vacuum drop, crisp minimalist high-fashion soundscape"
+    },
+    {
+      "id": "AUDIO_11",
+      "style_name": "Degraded Magnetic Tape & Glitch Horror",
+      "reference_style": "Analog Horror Style",
+      "matching_visual_id": "STYLE_11",
+      "acoustic_profile": "60Hz ground hum, severe tape wow-and-flutter wobble, sudden deafening audio clipping, muffled reverse reverb, and harsh analog static glitches.",
+      "audio_prompt_block": "60Hz electrical ground hum, degraded VHS magnetic tape wow and flutter, sudden deafening audio distortion burst, muffled terrifying reverse reverb, tape hiss and tracking audio glitch, lo-fi horror ambiance"
+    },
+    {
+      "id": "AUDIO_12",
+      "style_name": "Ethereal Atmospheric Anime Soundscape",
+      "reference_style": "Makoto Shinkai Style",
+      "matching_visual_id": "STYLE_12",
+      "acoustic_profile": "Crystalline wind chimes, distant gentle thunder rumbling across open skies, delicate piano harmonics with long plate reverb, rushing summer breeze through tall grass, and light rhythmic raindrops on glass.",
+      "audio_prompt_block": "Delicate piano key harmonics with long shimmering plate reverb, gentle distant thunder rumble, crystal wind chime tinkle, warm summer wind blowing through grass, scattered raindrops tapping on clear glass, expansive emotional anime ambiance"
+    },
+    {
+      "id": "AUDIO_13",
+      "style_name": "Dynamic Hybrid Comic Foley & Beat Drops",
+      "reference_style": "Spider-Verse Style",
+      "matching_visual_id": "STYLE_13",
+      "acoustic_profile": "Crisp vinyl scratch accents, punchy sub-bass 808 thuds, comic-book swooshes, sharp whip cracks, spray paint can rattling, and glitchy modulated riser transitions.",
+      "audio_prompt_block": "Punchy 808 sub-bass hit, vinyl scratch texture, whip crack impact, fast comic whoosh, spray can rattling ball click, stuttering dynamic riser, modern hybrid animation foley, hyper-punchy mix"
+    },
+    {
+      "id": "AUDIO_14",
+      "style_name": "Sun-Bleached Desert Grit & Whistling Winds",
+      "reference_style": "Sergio Leone Style",
+      "matching_visual_id": "STYLE_14",
+      "acoustic_profile": "Dry whistling desert gale, metallic spurs clinking with leather boot strides, ominous rattlesnake rattle in the brush, screeching lone hawk cry, and heavy single revolver hammer clicks.",
+      "audio_prompt_block": "Dry whistling desert wind, sharp metallic boot spur clinking, gritty leather boot step on loose gravel, distant hawk screech, hollow wood creak, crisp revolver cylinder spin and hammer cock, vintage spaghetti western atmosphere"
+    },
+    {
+      "id": "AUDIO_15",
+      "style_name": "Clinical Precision & Forensic Foley",
+      "reference_style": "David Fincher Style",
+      "matching_visual_id": "STYLE_15",
+      "acoustic_profile": "Controlled, razor-sharp mechanical and electrical foley: low sterile fluorescent light hum, tactile clicks of ballpoint pens, magnetic cassette clicks, heavy leather dossier drops, and deadened room acoustic.",
+      "audio_prompt_block": "Subtle sterile fluorescent hum, razor-sharp tactile pen click, heavy dossier slaps on polished wood desk, crisp latex glove snap, muffled phone line tone, clinical precision sound design, extremely dry acoustic damping"
+    },
+    {
+      "id": "AUDIO_16",
+      "style_name": "Biomechanical Wet Horror & Chitin Resonances",
+      "reference_style": "H.R. Giger Style",
+      "matching_visual_id": "STYLE_16",
+      "acoustic_profile": "Viscous wet squelches, clicking chitinous exoskeleton plates, rhythmic metallic breathing apparatus, deep sub-rumble through damp metal chambers, and hollow echoing fluid drips.",
+      "audio_prompt_block": "Viscous wet flesh squelch, clicking insectoid chitin plates, heavy rhythmic mechanical respirator breathing, cavernous dripping liquid echo, low metallic resonant sub-drone, unsettling biomechanical horror sound design"
+    },
+    {
+      "id": "AUDIO_17",
+      "style_name": "Nostalgic Neon & Rain-Drenched Melancholy",
+      "reference_style": "Wong Kar-Wai Style",
+      "matching_visual_id": "STYLE_17",
+      "acoustic_profile": "Muffled downpour hitting canvas canopies, low neon tube electrical buzz, distant Cantonese street chatter submerged in reverb, ticking pocket watches, and slow drifting gramophone warmth.",
+      "audio_prompt_block": "Soothing steady downpour on canvas awning, buzzing flickering neon tube, distant muffled street chatter through rain, slow mechanical clock tick, warm crackling vintage record background, romantic melancholic urban ambiance"
+    },
+    {
+      "id": "AUDIO_18",
+      "style_name": "Pastoral Handcrafted Cel-Animation Foley",
+      "reference_style": "Ghibli Style",
+      "matching_visual_id": "STYLE_18",
+      "acoustic_profile": "Crisp rustling forest leaves, rushing clear brook water, wooden bucket splash, gentle crackling hearth fire, clinking ceramic tea cups, and soft, naturalistic footsteps on moss.",
+      "audio_prompt_block": "Gentle brook water bubbling, lush leafy branches rustling in soft breeze, small crackling hearth embers, ceramic teacup clinking on wooden saucer, soft footsteps on damp moss, warm peaceful pastoral animation foley"
+    },
+    {
+      "id": "AUDIO_19",
+      "style_name": "High-Octane Industrial Combustion & Desert Roar",
+      "reference_style": "George Miller Style",
+      "matching_visual_id": "STYLE_19",
+      "acoustic_profile": "Supercharged V8 engine roar, screaming metal supercharger whine, flying gravel and sand blasting against rusted steel chassis, explosive exhaust backfires, and whistling hot desert gusts.",
+      "audio_prompt_block": "Roaring supercharged V8 engine revving, screaming mechanical supercharger whine, heavy gravel and grit spraying rusted sheet metal, violent exhaust backfire crack, screeching metallic friction, aggressive high-octane wasteland sound design"
+    },
+    {
+      "id": "AUDIO_20",
+      "style_name": "Psychedelic Analog Drone & Heavy Synth Wash",
+      "reference_style": "Panos Cosmatos Style",
+      "matching_visual_id": "STYLE_20",
+      "acoustic_profile": "Saturated analog synthesizer drone, sub-harmonic bass swell, screaming electric guitar feedback dissolved in cavernous reverb, and heavy, slow pulsating sub-impacts.",
+      "audio_prompt_block": "Saturated analog synth bass drone, rising electric guitar feedback drenched in cavernous plate reverb, slow heavy heartbeat sub-impact, buzzing tube amplifier hum, hypnotic dark psychedelic horror soundscape"
+    }
+  ]
+}

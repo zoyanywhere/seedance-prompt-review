@@ -1,0 +1,214 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "pipeline_metadata": {
+        "name": "Universal Hybrid AI Filmmaking Pipeline (3D Previs + Neural Diffusion)",
+        "version": "4.0.0-MASTER",
+        "architecture": "Engine-Agnostic / Multi-Modal Video-to-Video Synthesis / 3D Layout Driven",
+        "description": "Exhaustive, production-grade technical specification and execution framework for narrative and animated filmmaking fusing 3D layout, locked 2D reference sheets, 5-block prompt hierarchies, lipsync, depth compositing, and editorial conforming."
+    },
+    "core_axioms": [
+        {
+            "id": "AXIOM_01",
+            "name": "Asset-First Foundation",
+            "rule": "Output quality is strictly bound to input reference quality. Never generate video before character, prop, and environment reference sheets are fully locked and approved."
+        },
+        {
+            "id": "AXIOM_02",
+            "name": "3D Functional Separation",
+            "rule": "3D software provides camera vectors, velocity, physical timing, and collision tracking only. It must never provide beauty shading or final textures."
+        },
+        {
+            "id": "AXIOM_03",
+            "name": "Texture Decoupling",
+            "rule": "Dense procedural or painterly textures applied directly to moving 3D geometry cause temporal tracking collapse. Moving entities must retain clean volumetric surfaces; heavy painterly styles remain isolated to static background plates."
+        },
+        {
+            "id": "AXIOM_04",
+            "name": "Pre-Production Stress Testing",
+            "rule": "Run an end-to-end generation pass on the single most complex hero action shot to isolate lighting, drift, and topology errors before full-scale rollout."
+        },
+        {
+            "id": "AXIOM_05",
+            "name": "VFX & Facial Decoupling",
+            "rule": "Never generate chaotic environmental VFX (smoke, debris, rain) or articulative dialogue directly over dynamic character takes. Generate clean plates and composite in layers."
+        }
+    ],
+    "phase_0_pre_production": {
+        "classification_system": {
+            "type_a_previs_mandatory": {
+                "criteria": [
+                    "Dynamic camera trajectories (dolly, crane, tracking, orbit, dutch tilt)",
+                    "Direct physical contact or mechanical interlocking between entities/objects",
+                    "Precision kinetic timing where split-second delays alter comedic or dramatic impact",
+                    "Complex spatial navigation through tight architecture or vehicle interiors"
+                ],
+                "workflow": "3D Layout -> Neutral Viewport Clay Pass -> Multi-Reference Video Diffusion"
+            },
+            "type_b_direct_generation": {
+                "criteria": [
+                    "Static dialogue setups and conversation reverse shots",
+                    "Wide scenic establishing shots with minimal focal movement",
+                    "Isolated single-entity reaction close-ups",
+                    "Non-repeating background ambient elements"
+                ],
+                "workflow": "Direct Text-to-Video (T2V) or Single Image-to-Video (I2V)"
+            }
+        }
+    },
+    "phase_1_asset_engineering": {
+        "llm_system_prompt_for_assets": "You are a Technical Art Director for cinematic film production utilizing an AI diffusion pipeline. Convert short concept descriptions into deterministic prompts for image diffusion models. Requirements: 1. Model turnaround sheets for characters (front, 3/4, profile, back) in a single frame; multi-angle sheets for props; panoramic plates for environments. 2. Clean volumetric geometry, distinct silhouettes, no micro-surface noise. 3. Characters/props isolated on flat neutral grey (#808080) or pure white with subtle ground ambient occlusion only. 4. Structure: [SUBJECT], [VIEWS/ANGLES], [WARDROBE/ACCENTS], [LIGHTING/FINISH], [NEGATIVE CONSTRAINTS]. Respond solely with the final prompt in English.",
+        "prompt_templates": {
+            "entity_turnaround": "Model turnaround sheet of [ENTITY_ARCHETYPE], [VISUAL_ART_STYLE]. Four consistent full-body angles horizontally in one frame: direct front view, three-quarter front view, profile side view, three-quarter back view. Two isolated facial expression callouts in upper corner. Anatomy and silhouette: [PHYSICAL_PROPORTIONS, BUILD, POSTURE]. Costume/Equipment: [UPPER_SURFACE], [LOWER_SURFACE], [ACCESSORIES]. Clean structural contrast between skin/garments. Neutral studio three-point lighting, balanced ambient occlusion, zero dramatic shadows. Pure flat neutral light grey background (#D6D6D6), completely isolated asset turnaround sheet, zero environmental elements, production-ready reference.",
+            "hero_prop_turnaround": "Hero prop turnaround concept sheet of [PROP_DEVICE_ARCHETYPE], [VISUAL_ART_STYLE]. Cleanly arranged: 3/4 perspective view, direct side elevation, direct front view, top-down view. Visual attributes: [FORM_LANGUAGE], [PRIMARY_MATERIAL: matte wood, polished metal, worn stone], subtle functional accents, clean edge definition. Studio key and fill lighting, minimal specular glare, subtle contact shadow beneath base. Solid clean white background (#FFFFFF), perfectly isolated, no environment, no hands holding object, master design reference.",
+            "environment_plate": "Cinematic wide establishing background plate of [LOCATION_SETTING], [VISUAL_ART_STYLE]. Ultra-wide 16:9 cinematic vista, clear foreground, midground, background separation, strong atmospheric depth, distinct horizon. Lighting: [DIRECTIONAL_LIGHTING_FORMULA: e.g., low directional golden hour sun at 45 degrees, casting long harsh dynamic shadows across surfaces], atmospheric haze layers, strong volumetric depth. Empty scene, zero dynamic entities, zero moving foreground objects, clean environment plate ready for staging."
+        },
+        "post_processing_2d_pass": {
+            "step_1_value_chroma": "Curves adjustment: crush blacks by 4%, lift highlights by 2%. Boost Vibrance +15% to +25%, Saturation +10%.",
+            "step_2_silhouette_inking": "Hard textured brush (3-5px, 100% opacity). Manually draw outer contour lines along hair, collars, and silhouette boundaries to prevent temporal edge melting.",
+            "step_3_contact_shadow": "Soft round brush (Multiply, 30-40% opacity). Paint dark ambient occlusion directly beneath contact boundaries.",
+            "step_4_locking": "Export as 16-bit uncompressed PNG. Save as [PROJECT]_[ASSET]_[VERSION]_LOCKED.PNG. Immutable reference."
+        }
+    },
+    "phase_2_3d_previs_execution": {
+        "viewport_shading": {
+            "material": "Clay / Single Color MatCap (50% neutral studio grey). Zero diffuse textures, zero color maps.",
+            "specular": "0% (Disable completely to prevent AI from hallucinating wet, chrome, or latex surfaces on skin and matte clothing).",
+            "shadows": "Screen Space Ambient Occlusion (SSAO) and ground contact shadows MUST be enabled.",
+            "motion_blur": "Disabled completely (prevents blurry edge tracking failures)."
+        },
+        "camera_rules": {
+            "sensor_standard": "35mm Full Frame standard optical mapping.",
+            "focal_length_matrix": {
+                "kinetic_action_chase": "18mm - 24mm (Wide angle; exaggerates radial perspective and velocity parallax)",
+                "narrative_staging_dialogue": "35mm - 50mm (Natural eye perspective; zero focal distortion)",
+                "psychological_tension_portrait": "65mm - 85mm (Compressed background, shallow depth of field)",
+                "disorientation_impact": "18mm - 28mm (Dutch angle tilted 25 degrees with vertical pedestal shift)"
+            },
+            "camera_distance_rule": "Zoom out. Keep sufficient negative space and horizon visibility around proxy meshes. If an untextured clay mesh fills the frame, the model treats it as abstract geometry and hallucinates.",
+            "depth_of_field_in_previs": "Disabled (Deep focus only). Render full depth sharpness in 3D; control background blur purely via text prompt."
+        },
+        "spatial_choreography": {
+            "value_id_shading": {
+                "primary_entity": "30% Dark Grey clay",
+                "secondary_entity": "60% Mid Grey clay",
+                "hero_prop": "90% Light Grey / Off-White clay"
+            },
+            "mesh_collision_rule": "Zero mesh interpenetration. Maintain a mandatory 1cm air gap between touching 3D geometries to prevent limbs and objects from fusing into mutated anatomy.",
+            "exaggeration": "Animate physical deformation (squash & stretch, anticipation) with 15% to 20% more intensity than reality to offset neural smoothing.",
+            "framerate_and_cuts": "24.000 fps continuous export. Never include hard cuts inside a single previs clip. 1 cut = 1 independent generation pass."
+        }
+    },
+    "phase_3_neural_synthesis": {
+        "prompt_hierarchy_rule": "The first 20% of the prompt governs ~80% of model attention. Visual identity must be bound to images, not text.",
+        "consistency_anchor": "Characters, environments, and props 100% strictly match reference images.",
+        "five_block_architecture": {
+            "block_1_context_cinematography": {
+                "contents": "1-2 sentences defining genre, environment, world physics, specific lens, camera motion vector, and lighting formula."
+            },
+            "block_2_active_references_binding": {
+                "contents": "Explicit mapping of inputs. Assign Ref Video as motion/camera guide only (ignore clay shading). Map Ref Images to specific entities by ID/color tier. Include consistency anchor and positional locks."
+            },
+            "block_3_action_beats_timing": {
+                "contents": "Second-by-second chronological choreography (0.0s-1.2s start, 1.2s-2.5s apex/contact, 2.5s-4.0s recovery/settle)."
+            },
+            "block_4_locks_constraints": {
+                "contents": "Mandatory negatives: 'SFX only, no background music', 'no morphing geometry', 'no extra limbs', 'no unprompted camera pans', 'no random internal cuts'."
+            },
+            "block_5_animation_physics": {
+                "contents": "Physical weight instructions: visible muscle tension, inertia, squash and stretch, mass distribution, clear follow-through."
+            }
+        }
+    },
+    "phase_4_advanced_editorial_vfx": {
+        "module_01_lip_sync_and_facial_performance": {
+            "problem": "Video diffusion models struggle to generate synchronized, articulate phonemes for dialogue over multi-second takes.",
+            "pipeline_rule": "Decouple head motion from speech synthesis.",
+            "workflow_steps": [
+                "1. Lock performance take with closed or neutral mouth movement.",
+                "2. Record or generate finalized clean audio voice track (ADR).",
+                "3. Route the locked video pass and isolated audio track into a dedicated neural lipsync model (e.g., LivePortrait, SadTalker, SyncTalk, or equivalent).",
+                "4. Inpaint lips and lower jaw area only, blending with original facial skin texture to preserve global head motion and lighting."
+            ]
+        },
+        "module_02_deterministic_camera_matchmove": {
+            "problem": "Visual video-to-video tracking occasionally drifts by 2-5% in focal length or perspective.",
+            "solution": "Depth and Optical Flow conditioning (ControlNet / Advanced Pipeline).",
+            "execution": {
+                "pass_01": "Export Camera Trajectory alongside Depth Map Pass (Z-Depth / MiDaS format) from 3D software.",
+                "pass_02": "Export Normal Map Pass (surface angles) from 3D viewport.",
+                "pass_03": "Feed Depth + Normal passes as secondary structural control layers into the diffusion engine to mathematically clamp perspective distortion to zero."
+            }
+        },
+        "module_03_multi_angle_scene_coverage_continuity": {
+            "problem": "Cutting between Shot A (Wide) and Shot B (Reverse Over-The-Shoulder) causes micro-shifts in costumes, hair parts, or prop locations.",
+            "continuity_locks": [
+                "Use precise spatial coordinate logs: note which hand holds the prop, hair parting direction (left/right), and asymmetric markings.",
+                "Render the 3D Previs for BOTH angles from the exact same animated 3D master scene (simply switch cameras in Blender).",
+                "Seed-Locking: Use fixed seed ranges and identical Image Reference Sheets across both angles.",
+                "Prompt Anchor: Explicitly state orientation in Block 1: 'Camera positioned over right shoulder of Entity B, facing Entity A directly; prop remains in Entity A's left hand.'"
+            ]
+        },
+        "module_04_vfx_depth_and_layer_compositing": {
+            "problem": "Attempting to generate rain, explosions, fire, or dust directly within the character video take often distorts character faces.",
+            "vfx_separation_rule": "Never prompt heavy particle VFX over actor faces.",
+            "workflow": [
+                "1. Generate clean character performance shot without environmental chaos.",
+                "2. Generate or composite VFX (smoke, debris, muzzle flashes, rain) as separate alpha layers.",
+                "3. Extract AI depth map (Z-depth) from the rendered character take.",
+                "4. Sandwich VFX layers in 2.5D space in After Effects or DaVinci Fusion: Background -> Ambient Dust -> Character -> Foreground Debris."
+            ]
+        },
+        "editorial_conforming": {
+            "timeline_framerate": "24.000 fps master timeline interpretation.",
+            "retiming_performance_gap": "When subtle emotional reactions or pauses collapse, cut the frame at the micro-reaction and apply Optical Flow speed ramping (120%-150% stretch) to restore timing."
+        },
+        "continuity_and_color": {
+            "anchor_frame_protocol": "Export final frame of Shot N (16-bit PNG) and inject as Frame 0 (Starting Frame) of Shot N+1 for spatial continuity.",
+            "cross_environment_relighting": "Pre-grade character asset sheets with an environment-specific LUT/gradient map before feeding into a new lighting context.",
+            "unification": "Apply ACEScc/DaVinci YRGB management, balance using gray card reference, apply global show LUT, and overlay unified 35mm film grain (0.25-0.35 strength) to blend 2D, 3D, and AI layers."
+        },
+        "audio_stem_mastering": {
+            "stem_a_dialogue": "Isolated voice tracks, ADR, breath passes.",
+            "stem_b_sfx_foley": "Surface friction, footsteps, mechanical impacts, room tone.",
+            "stem_c_music": "Dedicated score composed directly to the locked edit."
+        }
+    },
+    "troubleshooting_matrix": [
+        {
+            "symptom": "Phantom entities / unwanted background figures",
+            "root_cause": "Empty seats or void spaces in the 3D previs prompt the AI to fill the negative space.",
+            "remedy": "Insert basic low-poly proxy volumes into empty zones. In Block 4 add: 'Space occupied strictly by designated subjects only.'"
+        },
+        {
+            "symptom": "Mesh-cloning / rigid clay surface rendered",
+            "root_cause": "Previs geometry is too dense or high-poly; the model prioritizes 3D wireframe over image references.",
+            "remedy": "Simplify previs meshes to smooth, subdivided low-poly proxy shapes. Move reference binding block into the top 20% of the prompt."
+        },
+        {
+            "symptom": "Camera framing shifts across takes",
+            "root_cause": "Text prompt contains conflicting spatial terms with the 3D camera trajectory.",
+            "remedy": "Capture the best framing frame from a successful take and supply it as an explicit first-frame image input."
+        },
+        {
+            "symptom": "Disappearing props or accessories",
+            "root_cause": "The camera framing reference or intermediate screenshot omitted the detail.",
+            "remedy": "Open the framing reference in 2D software, manually paint or composite the missing accessory back in, and re-upload."
+        },
+        {
+            "symptom": "Performance gap (subtle acting collapses during stunts)",
+            "root_cause": "Fast physical motion and subtle micro-expressions colliding within a single diffusion window.",
+            "remedy": "Split the shot into two cuts: render kinetic action as Shot A, cut to a 1-2 second close-up for facial performance as Shot B."
+        },
+        {
+            "symptom": "Sliding / drifting across floor planes",
+            "root_cause": "Previs lacks dark contact shadows or ambient occlusion under contact points.",
+            "remedy": "Enable SSAO and floor contact shadows in 3D viewport playblast. Diffusion models require dark contact edges to calculate friction."
+        }
+    ],
+    "production_math_formulas": {
+        "shot_count": "Total Film Duration (seconds) / Average Shot Length (3.5s)",
+        "estimated_generations": "Shot Count * Average Iterations per Shot (4 to 6 takes)",
+        "previs_time_allocation": "~45 minutes per complex Type A shot",
+        "post_production_bandwidth": "~1.5 days per finished minute of film"
+    }
+}

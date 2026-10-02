@@ -1,105 +1,158 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2320" viewBox="0 0 1800 2320"><title>Seedance review architecture: current system and proposed improvements</title><rect width="100%" height="100%" fill="#161616"/>
-<text x="60" y="79" font-family="Segoe UI,Arial,sans-serif" font-size="44" fill="#fff7f2">Seedance 2.5 | Agent architecture &amp; workflow</text>
-<text x="60" y="122" font-family="Segoe UI,Arial,sans-serif" font-size="23" fill="#fff7f2">IMPLEMENTED WORKFLOW | Explicit effort settings, source evidence and parallel specialist reviews</text>
-<text x="60" y="156" font-family="Segoe UI,Arial,sans-serif" font-size="23" fill="#78cbbd">Quality goal: first-pass creative fidelity and realism; total cost per accepted video.</text>
-<rect x="60" y="195" width="800" height="165" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="82" y="230" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">CREATOR TEAM | INVITE-ONLY ACCESS</text>
-<text x="82" y="271" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Creator brief + image / video / audio uploads</text>
-<text x="82" y="307" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Intent, must-haves, source roles and output settings</text>
-<text x="82" y="336" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Duration / aspect ratio / resolution are separate parameters</text>
-<rect x="930" y="195" width="810" height="165" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="952" y="230" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">NO LLM VALIDATION + GPT-6 LUNA</text>
-<text x="952" y="271" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Validate inputs + organize the creator brief</text>
-<text x="952" y="307" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Check media limits; preserve all creator requirements</text>
-<text x="952" y="336" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Luna structures intent; it does not invent source events</text>
-<polyline points="860,275 930,275" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="930,275 916,266 916,284" fill="#ff7a36"/>
-<polyline points="1335,360 1335,395 900,395 900,425" fill="none" stroke="#78cbbd" stroke-width="4"/>
-<polygon points="900,425 891,411 909,411" fill="#78cbbd"/>
-<rect x="430" y="425" width="940" height="175" rx="16" fill="#2d2724" stroke="#78cbbd" stroke-width="2" stroke-dasharray="9 6"/>
-<text x="452" y="460" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#78cbbd">GEMINI 3.8 FLASH · HIGH + SOL 6.1 CRITICAL FRAME CHECK</text>
-<text x="452" y="501" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Analyze source media BEFORE planning shots</text>
-<text x="452" y="537" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Timestamped observations: motion, camera, identity and audio</text>
-<text x="452" y="566" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Sampled frames with timestamps; distinguish facts from uncertainty</text>
-<text x="452" y="595" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Shared evidence goes to the storyboard and every reviewer</text>
-<polyline points="900,600 900,635" fill="none" stroke="#78cbbd" stroke-width="4"/>
-<polygon points="900,635 891,621 909,621" fill="#78cbbd"/>
-<rect x="430" y="635" width="940" height="160" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="452" y="670" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">CLAUDE OPUS 5.5 · HIGH</text>
-<text x="452" y="711" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Direct + storyboard + propose 4–30s → Creator approval</text>
-<text x="452" y="747" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Artistic intent, hook, rhythm, source roles and end states</text>
-<text x="452" y="776" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Reference scene cards; optional Gemini 3.1 Flash Image previews</text>
-<polyline points="900,795 900,830" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,830 891,816 909,816" fill="#ff7a36"/>
-<rect x="430" y="830" width="940" height="145" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="452" y="865" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">GPT-6.1 SOL · HIGH</text>
-<text x="452" y="906" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Draft the prompt from approved shots + source evidence</text>
-<text x="452" y="942" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Use @ImageN / @VideoN / @AudioN with clear source roles</text>
-<polyline points="900,975 900,1020" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1020 891,1006 909,1006" fill="#ff7a36"/>
-<text x="60" y="1050" font-family="Segoe UI,Arial,sans-serif" font-size="23" fill="#78cbbd">FOUR SPECIALIST REVIEWS | PARALLEL EXECUTION · SAME PROMPT VERSION AND SOURCE EVIDENCE</text>
-<rect x="60" y="1080" width="405" height="165" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="82" y="1115" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">GPT-6.1 SOL · HIGH</text>
-<text x="82" y="1156" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Action, timing &amp; hook</text>
-<text x="82" y="1192" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Timing, hook and payoff</text>
-<text x="82" y="1221" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Required final states</text>
-<polyline points="262,1245 262,1280 900,1280" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1280 886,1271 886,1289" fill="#ff7a36"/>
-<rect x="485" y="1080" width="405" height="165" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="507" y="1115" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">GEMINI 3.8 FLASH · HIGH</text>
-<text x="507" y="1156" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Camera &amp; visuals</text>
-<text x="507" y="1192" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Video + image evidence</text>
-<text x="507" y="1221" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Framing, motion, source fidelity</text>
-<polyline points="687,1245 687,1280 900,1280" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1280 886,1271 886,1289" fill="#ff7a36"/>
-<rect x="910" y="1080" width="405" height="165" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="932" y="1115" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">GEMINI 3.8 FLASH · HIGH</text>
-<text x="932" y="1156" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Audio &amp; dialogue</text>
-<text x="932" y="1192" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Actual audio / video sources</text>
-<text x="932" y="1221" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Speech, sound and timing</text>
-<polyline points="1112,1245 1112,1280 900,1280" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1280 914,1271 914,1289" fill="#ff7a36"/>
-<rect x="1335" y="1080" width="405" height="165" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="1357" y="1115" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">CLAUDE SONNET 5.5 · HIGH</text>
-<text x="1357" y="1156" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Continuity</text>
-<text x="1357" y="1192" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Identity and object continuity</text>
-<text x="1357" y="1221" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Cross-shot source consistency</text>
-<polyline points="1537,1245 1537,1280 900,1280" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1280 914,1271 914,1289" fill="#ff7a36"/>
-<polyline points="900,1280 900,1320" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1320 891,1306 909,1306" fill="#ff7a36"/>
-<rect x="430" y="1320" width="940" height="150" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="452" y="1355" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">GPT-6 ASTRA · HIGH</text>
-<text x="452" y="1396" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Astra supervises + repairs supported findings</text>
-<text x="452" y="1432" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Resolve contradictions; preserve intentional creative rule breaks</text>
-<text x="452" y="1461" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Concrete repairs and targeted rechecks; stop stalled repetition</text>
-<polyline points="900,1470 900,1505" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1505 891,1491 909,1491" fill="#ff7a36"/>
-<rect x="430" y="1505" width="940" height="160" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="452" y="1540" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">CLAUDE OPUS 5.5 · HIGH</text>
-<text x="452" y="1581" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Opus independently audits the repaired prompt</text>
-<text x="452" y="1617" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Original intent + source evidence + per-shot acceptance criteria</text>
-<text x="452" y="1646" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Verify closure; return remaining blockers to Astra</text>
-<polyline points="900,1665 900,1700" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="900,1700 891,1686 909,1686" fill="#ff7a36"/>
-<rect x="430" y="1700" width="940" height="140" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="452" y="1735" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">DETERMINISTIC GATE + CREATOR APPROVAL</text>
-<text x="452" y="1776" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Linter + verified findings → Creator decision</text>
-<text x="452" y="1812" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">Block approval while major / critical findings or linter errors remain</text>
-<polyline points="430,1770 30,1770 30,1395 430,1395" fill="none" stroke="#78cbbd" stroke-width="4"/>
-<polygon points="430,1395 416,1386 416,1404" fill="#78cbbd"/>
-<text x="65" y="1462" font-family="Segoe UI,Arial,sans-serif" font-size="22" fill="#78cbbd">Repair + recheck</text>
-<text x="65" y="1493" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#78cbbd">Shared source evidence</text>
-<polyline points="1370,1770 1535,1770 1535,1870" fill="none" stroke="#ff7a36" stroke-width="4"/>
-<polygon points="1535,1870 1526,1856 1544,1856" fill="#ff7a36"/>
-<rect x="60" y="1870" width="1680" height="115" rx="16" fill="#2d2724" stroke="#ff7a36" stroke-width="2"/>
-<text x="82" y="1905" font-family="Segoe UI,Arial,sans-serif" font-size="20" fill="#ff7a36">EXTERNAL STUDIO NOW | BYTEPLUS GENERATION IN A LATER PHASE</text>
-<text x="82" y="1946" font-family="Segoe UI,Arial,sans-serif" font-size="27" fill="#fff7f2">Handoff: final prompt + media alias / upload-order list + separate API settings</text>
-<text x="65" y="1858" font-family="Segoe UI,Arial,sans-serif" font-size="21" fill="#fff7f2">COST LEDGER: tokens, reasoning, previews, agent / round / full-run totals · bounded retries and spend</text>
-<rect x="60" y="2020" width="1680" height="265" rx="16" fill="#2d2724" stroke="#78cbbd" stroke-width="2"/>
-<text x="82" y="2060" font-family="Segoe UI,Arial,sans-serif" font-size="26" fill="#78cbbd">CREATIVE QUALITY CONTRACT</text>
-<text x="82" y="2104" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#fff7f2">Video project assessed by professors — not a master thesis.</text>
-<text x="82" y="2144" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#fff7f2">Timing is realism: movement, reactions, perception, readable text and a credible payoff.</text>
-<text x="82" y="2184" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#fff7f2">Preserve motivated creative rule breaks; correct accidental inconsistencies.</text>
-<text x="82" y="2224" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#fff7f2">Assess hook and audience engagement; artistic intention stays central. Virality is not guaranteed.</text>
-<text x="82" y="2264" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#fff7f2">Measure success on generated videos: requirements met, film quality and total cost per accepted result.</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2850" viewBox="0 0 1800 2850"><title>Promptlab: Film and Scene / Short and Ad production workflow</title><rect width="100%" height="100%" fill="#080808"/>
+<text x="60" y="50" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="20" fill="#ff6a25">ZOYA ANYWHERE / PROMPTLAB</text>
+<text x="60" y="113" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="48" fill="#f5eee8">One application. Two creative profiles.</text>
+<text x="60" y="151" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="24" fill="#c1b7ae">Implemented workflow · project-scoped rules · five-block prompts · creator approval</text>
+<rect x="60" y="190" width="810" height="140" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="83" y="224" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">FILM &amp; SCENE</text>
+<text x="83" y="262" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Story, performance, continuity</text>
+<text x="83" y="289" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Dramaturgy, motivated camera language, emotional rhythm</text>
+<rect x="930" y="190" width="810" height="140" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="953" y="224" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">SHORT &amp; AD</text>
+<text x="953" y="262" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Hook, rhythm, payoff</text>
+<text x="953" y="289" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Opening clarity; message and product focus when relevant</text>
+<polyline points="465,330 465,355 900,355 900,380" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,380.0 892.8,366.8 907.2,366.8" fill="#ff6a25"/>
+<polyline points="1335,330 1335,355 900,355 900,380" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,380.0 892.8,366.8 907.2,366.8" fill="#ff6a25"/>
+<rect x="240" y="380" width="1320" height="140" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="263" y="414" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">CREATOR TEAM / INVITATION-ONLY</text>
+<text x="263" y="452" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Brief + purpose + image / video / audio references</text>
+<text x="263" y="479" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Project choices: audio, morphing, realism, style, camera; resolution and aspect ratio separately</text>
+<text x="263" y="505" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Both profiles allow creative rule breaks. The creator approves the proposed 4–30 second duration.</text>
+<polyline points="900,520 900,550" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,550.0 892.8,536.8 907.2,536.8" fill="#ff6a25"/>
+<rect x="60" y="550" width="470" height="435" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="83" y="584" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">SIX MASTER DOCUMENTS</text>
+<text x="83" y="622" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Versioned production library</text>
+<text x="83" y="649" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">46 camera movements · 20 styles</text>
+<text x="83" y="675" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Matching sound profiles · camera looks</text>
+<text x="83" y="701" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Production planning · five blocks</text>
+<text x="83" y="727" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae"></text>
+<text x="83" y="753" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Curated, role-specific selections</text>
+<text x="83" y="779" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Creator intent outranks recipes</text>
+<text x="83" y="805" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">No universal music / morphing ban</text>
+<text x="83" y="831" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Version included in review context</text>
+<text x="83" y="857" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Changed rules require a new plan</text>
+<text x="83" y="883" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Source observation stays independent</text>
+<rect x="580" y="550" width="1160" height="150" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="603" y="584" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">SOURCE EVIDENCE / CONDITIONAL ON UPLOADED MEDIA</text>
+<text x="603" y="622" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Gemini 3.8 Flash high → GPT-6.1 Sol high</text>
+<text x="603" y="649" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Analyze actual images, video and audio; Sol cross-checks timestamped video frames.</text>
+<text x="603" y="675" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Preserve uncertainty. Cache observations by source identity and reference role.</text>
+<polyline points="1160,700 1160,730" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="1160.0,730.0 1152.8,716.8 1167.2,716.8" fill="#ff6a25"/>
+<rect x="580" y="730" width="1160" height="110" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="603" y="764" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">GPT-6 LUNA / MEDIUM</text>
+<text x="603" y="802" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Organize the creator brief</text>
+<text x="603" y="829" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Intent, must-haves, uncertainties and source roles; preserve original requirements.</text>
+<polyline points="530,800 580,800" fill="none" stroke="#7fccc1" stroke-width="3"/>
+<polygon points="580.0,800.0 566.8,807.2 566.8,792.8" fill="#7fccc1"/>
+<polyline points="1160,840 1160,870" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="1160.0,870.0 1152.8,856.8 1167.2,856.8" fill="#ff6a25"/>
+<rect x="580" y="870" width="1160" height="150" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="603" y="904" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">CLAUDE OPUS 5.5 / HIGH</text>
+<text x="603" y="942" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Direct the storyboard and timing</text>
+<text x="603" y="969" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Select valid style / camera entries per shot; explain direct or recommended previs.</text>
+<text x="603" y="995" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Define initial / final states, continuous timing and visible / audible acceptance criteria.</text>
+<polyline points="1160,1020 1160,1050 900,1050 900,1080" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1080.0 892.8,1066.8 907.2,1066.8" fill="#ff6a25"/>
+<rect x="240" y="1080" width="1320" height="110" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="263" y="1114" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">CREATOR CHECKPOINT</text>
+<text x="263" y="1152" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Review and approve storyboard + duration</text>
+<text x="263" y="1179" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Optional Gemini 3.1 Flash Image previews: creator approval required before review use.</text>
+<polyline points="900,1190 900,1220" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1220.0 892.8,1206.8 907.2,1206.8" fill="#ff6a25"/>
+<rect x="240" y="1220" width="1320" height="110" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="263" y="1254" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">GPT-6.1 SOL / HIGH</text>
+<text x="263" y="1292" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Draft the five-block prompt</text>
+<text x="263" y="1319" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Use approved shots, current production rules, source evidence and explicit media aliases.</text>
+<text x="60" y="1391" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#ff6a25">PARALLEL SPECIALIST REVIEWS</text>
+<polyline points="900,1330 900,1400 255,1400 255,1415" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="255.0,1415.0 247.8,1401.8 262.2,1401.8" fill="#ff6a25"/>
+<rect x="60" y="1415" width="390" height="160" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="83" y="1449" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">GPT-6.1 SOL / HIGH</text>
+<text x="83" y="1487" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Action &amp; timing</text>
+<text x="83" y="1514" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Pacing, causality, readability</text>
+<text x="83" y="1540" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Hook / payoff fit to purpose</text>
+<polyline points="255,1575 255,1600 900,1600 900,1640" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1640.0 892.8,1626.8 907.2,1626.8" fill="#ff6a25"/>
+<polyline points="900,1330 900,1400 685,1400 685,1415" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="685.0,1415.0 677.8,1401.8 692.2,1401.8" fill="#ff6a25"/>
+<rect x="490" y="1415" width="390" height="160" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="513" y="1449" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">GEMINI 3.8 FLASH / HIGH</text>
+<text x="513" y="1487" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Camera &amp; visuals</text>
+<text x="513" y="1514" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Framing, movement, style</text>
+<text x="513" y="1540" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Actual media and references</text>
+<polyline points="685,1575 685,1600 900,1600 900,1640" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1640.0 892.8,1626.8 907.2,1626.8" fill="#ff6a25"/>
+<polyline points="900,1330 900,1400 1115,1400 1115,1415" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="1115.0,1415.0 1107.8,1401.8 1122.2,1401.8" fill="#ff6a25"/>
+<rect x="920" y="1415" width="390" height="160" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="943" y="1449" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">GEMINI 3.8 FLASH / HIGH</text>
+<text x="943" y="1487" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Audio &amp; dialogue</text>
+<text x="943" y="1514" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Speech, Foley, atmosphere</text>
+<text x="943" y="1540" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Project music / silence rules</text>
+<polyline points="1115,1575 1115,1600 900,1600 900,1640" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1640.0 892.8,1626.8 907.2,1626.8" fill="#ff6a25"/>
+<polyline points="900,1330 900,1400 1545,1400 1545,1415" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="1545.0,1415.0 1537.8,1401.8 1552.2,1401.8" fill="#ff6a25"/>
+<rect x="1350" y="1415" width="390" height="160" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="1373" y="1449" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">CLAUDE SONNET 5.5 / HIGH</text>
+<text x="1373" y="1487" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Continuity</text>
+<text x="1373" y="1514" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Identity, state transitions</text>
+<text x="1373" y="1540" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Reference and shot continuity</text>
+<polyline points="1545,1575 1545,1600 900,1600 900,1640" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1640.0 892.8,1626.8 907.2,1626.8" fill="#ff6a25"/>
+<rect x="240" y="1640" width="1320" height="140" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="263" y="1674" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">GPT-6 ASTRA / HIGH</text>
+<text x="263" y="1712" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Repair supported findings and deterministic errors</text>
+<text x="263" y="1739" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Revise the actual prompt; preserve creator intent and approved reference authority.</text>
+<text x="263" y="1765" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Do not silently erase blockers or repeat an unchanged prompt.</text>
+<polyline points="900,1780 900,1820" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,1820.0 892.8,1806.8 907.2,1806.8" fill="#ff6a25"/>
+<rect x="240" y="1820" width="1320" height="140" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="263" y="1854" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">CLAUDE OPUS 5.5 / HIGH</text>
+<text x="263" y="1892" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Independently verify the repaired prompt</text>
+<text x="263" y="1919" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Audit against source evidence, project rules and prior findings.</text>
+<text x="263" y="1945" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Close major findings with evidence in the revision; otherwise keep them open.</text>
+<polyline points="900,1960 900,2000" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="900.0,2000.0 892.8,1986.8 907.2,1986.8" fill="#ff6a25"/>
+<rect x="240" y="2000" width="1320" height="140" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="263" y="2034" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">DETERMINISTIC GATE + AUDIT RESULT</text>
+<text x="263" y="2072" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Is the prompt ready for creator approval?</text>
+<text x="263" y="2099" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Five ordered nonempty blocks · valid media aliases · timing and project constraints</text>
+<text x="263" y="2125" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">A clean model verdict cannot bypass failed checks. Source conflicts stop approval.</text>
+<polyline points="240,2070 80,2070 80,1710 240,1710" fill="none" stroke="#ff6a25" stroke-width="3"/>
+<polygon points="240.0,1710.0 226.8,1717.2 226.8,1702.8" fill="#ff6a25"/>
+<text x="85" y="2189" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">REPAIR LOOP</text>
+<text x="85" y="2218" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="18" fill="#c1b7ae">Bounded by rounds,</text>
+<text x="85" y="2245" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="18" fill="#c1b7ae">budget and progress.</text>
+<polyline points="900,2140 900,2180" fill="none" stroke="#7fccc1" stroke-width="3"/>
+<polygon points="900.0,2180.0 892.8,2166.8 907.2,2166.8" fill="#7fccc1"/>
+<rect x="320" y="2180" width="1240" height="110" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="343" y="2214" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">CREATOR DECISION</text>
+<text x="343" y="2252" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Approve the final prompt or revise the project</text>
+<text x="343" y="2279" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Unresolved blockers remain visible. A passing review cannot guarantee a generated video.</text>
+<polyline points="900,2290 900,2330" fill="none" stroke="#7fccc1" stroke-width="3"/>
+<polygon points="900.0,2330.0 892.8,2316.8 907.2,2316.8" fill="#7fccc1"/>
+<rect x="240" y="2330" width="1320" height="190" rx="16" fill="#171717" stroke="#ff6a25" stroke-width="2"/>
+<text x="263" y="2364" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#ff6a25">MANUAL HANDOFF / VIDEO GENERATION IS OUTSIDE PROMPTLAB</text>
+<text x="263" y="2402" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Final prompt + reference mapping + separate settings</text>
+<text x="263" y="2429" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">1  Scene context &amp; cinematography                 2  Active references &amp; binding</text>
+<text x="263" y="2455" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">3  Action beats &amp; timing                                  4  Locks &amp; constraints</text>
+<text x="263" y="2481" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">5  Animation &amp; physics</text>
+<text x="263" y="2507" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">@Image1 / @Video1 / @Audio1 → actual file names; duration / ratio / resolution separately</text>
+<rect x="60" y="2570" width="810" height="170" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="83" y="2604" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">OPERATIONS</text>
+<text x="83" y="2642" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Usage, isolation and compatibility</text>
+<text x="83" y="2669" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Token / cost ledger includes previews and failed-call reserves.</text>
+<text x="83" y="2695" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Project ownership and versioned checkpoints isolate contexts.</text>
+<text x="83" y="2721" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Existing projects keep their workflow until a profile is selected.</text>
+<rect x="930" y="2570" width="810" height="170" rx="16" fill="#171717" stroke="#7fccc1" stroke-width="2"/>
+<text x="953" y="2604" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="19" fill="#7fccc1">PLANNING ADVICE / NOT EXECUTED HERE</text>
+<text x="953" y="2642" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="28" fill="#f5eee8">Previs, hero-shot tests and post-production</text>
+<text x="953" y="2669" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">Recommendations support difficult spatial / physical actions.</text>
+<text x="953" y="2695" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">No automatic Blender, video rendering, lip-sync or compositing.</text>
+<text x="953" y="2721" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="21" fill="#c1b7ae">No promise of exact visual reproduction or virality.</text>
+<text x="60" y="2810" font-family="Segoe UI,DejaVu Sans,sans-serif" font-size="20" fill="#c1b7ae">MODEL DEFAULTS · Configurable per deployment · Production profiles / 2026-10-03</text>
+</svg>

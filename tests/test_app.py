@@ -833,3 +833,165 @@ def test_quality_source_frames_are_timestamped_bounded_and_removed(tmp_path, mon
         assert all(p.exists() for p in paths)
     assert not any(p.exists() for p in paths)
     assert (tmp_path/'clip.mp4').exists()
+
+# Production profiles: real workflow gates, isolated context and backward compatibility.
+def production_prompt(audio='No background music. Dialogue and SFX only.'):
+    from app.production import HEADINGS
+    content = ['A fox crosses snow, fixed camera.', 'No external references.',
+               '0-8s: the fox walks and settles.', audio, 'Grounded weight and contact.']
+    return '\n\n'.join(h+'\n'+v for h,v in zip(HEADINGS,content))
+
+
+def test_production_library_scope_and_conflicts():
+    from app.production import production_context, library, contract_errors
+    film=Project(production_settings={'profile':'film_scene','audio':'sfx_dialogue','style_id':'STYLE_12','camera_id':'CAM_01'})
+    short=Project(production_settings={'profile':'short_ad','audio':'score','morphing':'allowed','style_id':'STYLE_12'})
+    a=production_context(film,'audio_dialogue'); b=production_context(short,'audio_dialogue')
+    assert not a['sound_examples'] and b['sound_examples']
+    assert 'no background music' in a['audio_rule'].lower()
+    assert 'transformation_rule' not in a and 'allowed' in b['transformation_rule']
+    assert 'movement_examples' not in a
+    camera=production_context(film,'camera_visuals')
+    assert camera['movement_examples'][0]['id']=='CAM_01'
+    assert 'shot' not in camera['style_examples'][0]['visual_traits'].lower()
+    assert len(library()['movements'])==46
+    assert {x['matching_visual_id'] for x in library()['audio']} <= {x['id'] for x in library()['styles']}
+    assert contract_errors(short,production_prompt('No morphing. No background music.'),[])
+    assert contract_errors(film,production_prompt('A piano score.'),[])
+    assert not contract_errors(film,production_prompt(),[])
+
+
+def test_production_five_blocks_aliases_and_placeholders():
+    from app.production import contract_errors, HEADINGS
+    from types import SimpleNamespace
+    p=Project(production_settings={'profile':'short_ad'})
+    media=[SimpleNamespace(id=9,kind='image'),SimpleNamespace(id=20,kind='video')]
+    text=production_prompt().replace('No external references.','@Image1 identity; @Video1 camera and blocking.')
+    assert not contract_errors(p,text,media)
+    assert contract_errors(p,text.replace('@Video1','@Video2'),media)
+    assert contract_errors(p,text.replace('Grounded weight','[ENTITY_A] weight'),media)
+    assert contract_errors(p,text.replace(HEADINGS[1],HEADINGS[0]),media)
+    assert contract_errors(p,text.replace(HEADINGS[4]+'\nGrounded weight and contact.',HEADINGS[4]),media)
+
+
+def test_production_api_switch_requires_replan_and_preserves_legacy_fields():
+    with TestClient(app) as client:
+        csrf=signin(client); headers={'X-CSRF-Token':csrf}
+        assert client.get('/api/production-library').status_code==200
+        base={'title':'Film','brief':'A quiet forest scene','production_settings':{'profile':'film_scene','audio':'sfx_dialogue'}}
+        p=client.post('/api/projects',json=base,headers=headers).json()
+        assert p['production_settings']['profile']=='film_scene'
+        invalid={**base,'production_settings':{'profile':'short_ad','camera_id':'NONEXISTENT'}}
+        assert client.post('/api/projects',json=invalid,headers=headers).status_code==422
+        with SessionLocal() as db:
+            row=db.get(Project,p['id']); row.storyboard={'shots':[{'id':'s1','visible_action':'Walk','time_window':'0-8'}]}; row.prompt='Old prompt'; db.commit()
+        changed=client.put(f"/api/projects/{p['id']}",headers=headers,json={**base,'production_settings':{'profile':'short_ad','morphing':'allowed'}}).json()
+        assert changed['production_settings']['profile']=='short_ad'
+        assert changed['storyboard_version']==1 and not changed['prompt']
+        assert client.post(f"/api/projects/{p['id']}/storyboard/approve",headers=headers).status_code in {409,422}
+        assert client.post(f"/api/projects/{p['id']}/reviews",headers=headers).status_code==409
+        # Older API clients cannot erase production choices by omitting the new field.
+        kept=client.put(f"/api/projects/{p['id']}",headers=headers,json={'title':'Renamed','brief':'Forest'}).json()
+        assert kept['production_settings']['profile']=='short_ad'
+        client.post('/api/auth/logout',headers=headers)
+        assert client.get('/api/production-library').status_code==401
+
+
+def test_production_linter_failures_are_repaired_before_approval(monkeypatch):
+    import json
+    from app import workflow
+    from app.production import library
+    calls=[]
+    def fake(phase,prompt,media,**kwargs):
+        calls.append((phase,prompt))
+        if phase=='prompt_draft': return ModelResult(json.dumps({'prompt':'Unstructured draft'}))
+        if phase=='supervisor':
+            assert 'five exact production blocks' in prompt
+            return ModelResult(json.dumps({'prompt':production_prompt(),'unresolved_critical':False}))
+        return ModelResult('{"findings":[],"resolutions":[],"verdict":"clear"}')
+    monkeypatch.setattr(workflow,'call_model',fake)
+    with SessionLocal() as db:
+        project,review=quality_project(db)
+        project.production_settings={'profile':'film_scene','audio':'sfx_dialogue'}
+        project.storyboard=profile_storyboard(project.storyboard)
+        review.budget_usd=20;db.commit()
+        workflow.run_review(db,project,[],review)
+        assert review.status=='ready_for_approval',review.error
+        assert review.findings['production_snapshot']['creator_choices']['profile']=='film_scene'
+        assert all('production-v1-' in prompt for _,prompt in calls)
+        signature=workflow.review_checkpoint_signature(db,project,[])
+        project.production_settings={'profile':'short_ad','audio':'score'}
+        assert signature != workflow.review_checkpoint_signature(db,project,[])
+
+
+def test_production_empty_clean_audit_cannot_approve_bad_format(monkeypatch):
+    import json
+    from app import workflow
+    from app.production import library
+    def fake(phase,*args,**kwargs):
+        if phase=='prompt_draft': return ModelResult('{"prompt":"Unstructured"}')
+        if phase=='supervisor': return ModelResult('{"prompt":"Unstructured","unresolved_critical":false}')
+        return ModelResult('{"findings":[],"resolutions":[],"verdict":"clear"}')
+    monkeypatch.setattr(workflow,'call_model',fake)
+    with SessionLocal() as db:
+        project,review=quality_project(db);project.production_settings={'profile':'short_ad'}
+        project.storyboard=profile_storyboard(project.storyboard);review.budget_usd=20;db.commit()
+        workflow.run_review(db,project,[],review)
+        assert review.status=='needs_changes' and not review.linter['passed']
+
+
+def test_production_additive_migration_preserves_existing_projects(tmp_path,monkeypatch):
+    from sqlalchemy import create_engine, text
+    from app import db as database
+    temporary=create_engine('sqlite:///'+str(tmp_path/'old.db'))
+    monkeypatch.setattr(database,'engine',temporary)
+    database.init_db()
+    with temporary.begin() as connection:
+        connection.execute(text('ALTER TABLE projects DROP COLUMN production_settings'))
+        connection.execute(text("INSERT INTO projects (id,owner_id,title,brief,must_haves,task_type,duration,resolution,ratio,storyboard_version,prompt,status,created_at,updated_at) VALUES (1,1,'Existing','Keep me','','text_to_video',8,'720p','16:9',0,'','draft',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"))
+    database.init_db();database.init_db()
+    with temporary.connect() as connection:
+        row=connection.execute(text('SELECT brief,production_settings FROM projects WHERE id=1')).one()
+        assert row==('Keep me',None)
+    temporary.dispose()
+
+
+def profile_storyboard(board):
+    from app.production import library
+    return {**board, '_production_version': library()['version'], 'shots': [
+        {**shot, 'style_id': 'STYLE_10', 'camera_id': 'CAM_01', 'production_method': 'direct',
+         'production_reason': 'Simple stationary framing suits this action.',
+         'acceptance_criteria': ['The fox stays in frame.']} for shot in board['shots']]}
+
+
+def test_production_storyboard_catalog_and_version_gates():
+    from app import workflow
+    from app.production import production_context
+    p = Project(production_settings={'profile':'short_ad'}, storyboard=profile_storyboard(
+        {'shots':[{'id':'s1','time_window':'0-8','visible_action':'A fox walks.'}]}))
+    assert not workflow.validate_storyboard(p, [])
+    assert production_context(p,'camera_visuals')['movement_examples'][0]['id']=='CAM_01'
+    p.storyboard['shots'][0]['camera_id']='CAM_UNKNOWN'
+    assert any('valid camera_id' in e for e in workflow.validate_storyboard(p, []))
+    p.storyboard['_production_version']='older-library'
+    assert any('new storyboard' in e for e in workflow.validate_storyboard(p, []))
+
+
+def test_production_director_uses_profile_and_selected_library(monkeypatch):
+    import json
+    from app import workflow
+    def fake(phase,prompt,media,**kwargs):
+        assert 'production-v1-' in prompt
+        if phase=='brief_intake': return ModelResult('{"intent":"A fox walks"}')
+        assert phase=='storyboard' and 'available_choices' in prompt and 'short_ad' in prompt
+        return ModelResult(json.dumps(profile_storyboard({'duration_seconds':8,'shots':[
+            {'id':'s1','time_window':'0-8','visible_action':'A fox walks.'}]})))
+    monkeypatch.setattr(workflow,'call_model',fake)
+    with SessionLocal() as db:
+        p,_=quality_project(db)
+        p.production_settings={'profile':'short_ad','camera_id':'CAM_01'}
+        db.commit()
+        result=workflow.generate_storyboard(db,p,[])
+        assert result['production_plan']['profile']=='short_ad'
+        assert not workflow.validate_storyboard(p,[])
+        assert not p.storyboard_approved_at

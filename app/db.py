@@ -78,6 +78,7 @@ class Project(Base):
     duration_mode: Mapped[str] = mapped_column(String(12), default="agent", server_default="fixed")
     resolution: Mapped[str] = mapped_column(String(10), default="720p")
     ratio: Mapped[str] = mapped_column(String(20), default="16:9")
+    production_settings: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     storyboard: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     storyboard_version: Mapped[int] = mapped_column(Integer, default=0)
     storyboard_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -159,6 +160,7 @@ def init_db() -> None:
     # Additive compatibility upgrade; existing project durations remain fixed.
     with engine.begin() as connection:
         for table, column, declaration in (
+            ("projects", "production_settings", "JSON"),
             ("projects", "duration_mode", "VARCHAR(12) NOT NULL DEFAULT 'fixed'"),
             ("usage", "effort", "VARCHAR(16) NOT NULL DEFAULT ''"),
         ):
