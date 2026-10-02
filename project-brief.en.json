@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.9",
-  "updated_at": "2026-10-01",
+  "schema_version": "2.0",
+  "updated_at": "2026-10-02",
   "status": "Quality-first workflow and production delivery configuration implemented; server rollout and real-video outcome validation pending",
   "implementation": {
     "implemented": [
@@ -454,7 +454,7 @@
     "upload_scanner": "None; removed at creator request for the 1-GB host",
     "database": "PostgreSQL 17.11, non-root production process",
     "dependabot": "Weekly pip, Dockerfile, Docker Compose and GitHub Actions updates; tested-head auto-merge; PostgreSQL major updates excluded pending migration",
-    "live_deployment": "Pending user-managed server environment, DNS and repository SSH secrets",
+    "live_deployment": "Live at https://promptlab.zoyanywhere.com; user-managed server environment and deployment secrets",
     "server_resources": {
       "cpu": 1,
       "ram_mb": 1024,
@@ -462,5 +462,26 @@
       "database_memory_limit": "192m",
       "usage": "Light use; concurrent media processing requires load testing"
     }
+  },
+  "production_profiles": {
+    "implemented": [
+      "film_scene",
+      "short_ad"
+    ],
+    "choices": [
+      "purpose",
+      "effect",
+      "audio",
+      "morphing",
+      "realism",
+      "style_id",
+      "camera_id",
+      "camera_body_id"
+    ],
+    "library": "app/knowledge/Master*.json",
+    "adaptation": "app/production.py",
+    "contract": "five ordered nonempty blocks; valid reference aliases; project-specific constraints",
+    "compatibility": "Existing projects retain their workflow until explicitly profiled",
+    "validation": "Automated simulated-provider checks; actual generated video quality requires evaluation"
   }
 }

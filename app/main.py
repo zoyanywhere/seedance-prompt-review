@@ -1,3 +1,4 @@
+from .production import catalog, production_context, settings as production_settings
 import base64
 import json
 import os
@@ -22,7 +23,7 @@ from sqlalchemy.orm import Session
 from .db import Invitation, LoginSession, Media, Preview, Project, Review, SessionLocal, Usage, User, init_db, utcnow
 from .providers import MEDIA_ROOT, MODEL_IDS
 from .security import COOKIE_NAME, SECURE_COOKIES, SESSION_HOURS, current_user, digest, get_db, hash_password, new_login, require_admin, require_csrf, throttle, token, verify_password
-from .workflow import audit_prior_revision, generate_storyboard, normalize_storyboard_references, run_review, validate_settings, validate_storyboard
+from .workflow import audit_prior_revision, generate_storyboard, normalize_storyboard_references, lint_prompt, run_review, validate_settings, validate_storyboard
 from .workflow import PIPELINE_VERSION
 from .evidence import source_signature
 
@@ -87,6 +88,7 @@ class InviteIn(BaseModel):
 
 
 class ProjectIn(BaseModel):
+    production_settings: dict[str, str] = Field(default_factory=dict)
     title: str = Field(min_length=1, max_length=160)
     brief: str = Field(min_length=1, max_length=12000)
     must_haves: str = Field(default="", max_length=5000)
@@ -136,6 +138,8 @@ def project_data(db: Session, project: Project) -> dict:
         "id": project.id, "title": project.title, "brief": project.brief, "must_haves": project.must_haves,
         "task_type": project.task_type, "duration": project.duration, "resolution": project.resolution,
         "duration_mode": project.duration_mode,
+        "production_settings": project.production_settings or {},
+        "production_library_version": catalog()["version"],
         "preparation_phase": (project.storyboard or {}).get("_preparation_phase"),
         "ratio": project.ratio,
         "storyboard": {k: v for k, v in (project.storyboard or {}).items() if not k.startswith("_")} if project.storyboard else None,
@@ -254,6 +258,11 @@ def list_projects(user: User = Depends(current_user), db: Session = Depends(get_
     return [{"id": p.id, "title": p.title, "status": p.status, "updated_at": p.updated_at} for p in rows]
 
 
+@app.get("/api/production-library")
+def production_library(user: User = Depends(current_user)):
+    return catalog()
+
+
 @app.post("/api/projects")
 def create_project(body: ProjectIn, user: User = Depends(require_csrf), db: Session = Depends(get_db)):
     project = Project(owner_id=user.id, **body.model_dump())
@@ -275,7 +284,7 @@ def update_project(project_id: int, body: ProjectIn, user: User = Depends(requir
     project = get_project(db, project_id, user)
     if project.status in {"review_running", "storyboard_running", "preview_running"}:
         raise HTTPException(409, "Review is running")
-    for key, value in body.model_dump().items():
+    for key, value in body.model_dump(exclude_unset=True).items():
         setattr(project, key, value)
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
     errors = validate_settings(project, media)
@@ -285,6 +294,10 @@ def update_project(project_id: int, body: ProjectIn, user: User = Depends(requir
     project.storyboard_approved_at = None
     project.prompt_approved_at = None
     project.status = "draft"
+    project.storyboard_version += 1
+    project.prompt = ""
+    if production_settings(project) and project.storyboard:
+        project.storyboard = {**project.storyboard, "_needs_replan": True}
     db.commit()
     return project_data(db, project)
 
@@ -623,7 +636,7 @@ def start_review(project_id: int, background: BackgroundTasks,
     if project.status not in {"storyboard_approved", "needs_changes"} or not project.storyboard_approved_at:
         raise HTTPException(409, "Approve the storyboard before review")
     media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
-    errors = validate_settings(project, media)
+    errors = validate_settings(project, media) + validate_storyboard(project, media)
     evidence = (project.storyboard or {}).get("_evidence", {})
     if media and (evidence.get("signature") != source_signature(media) or evidence.get("version") != PIPELINE_VERSION):
         errors.append("Generate and approve a new storyboard to analyze the current references before review")
@@ -658,6 +671,9 @@ def approve_prompt(project_id: int, user: User = Depends(require_csrf), db: Sess
     review = db.scalar(select(Review).where(Review.project_id == project.id).order_by(Review.id.desc()))
     if not review or review.status != "ready_for_approval" or review.storyboard_version != project.storyboard_version:
         raise HTTPException(409, "No valid review is ready for approval")
+    media = list(db.scalars(select(Media).where(Media.project_id == project.id)))
+    if production_settings(project) and not lint_prompt(project, review.final_prompt, media)["passed"]:
+        raise HTTPException(409, "Production settings or library changed; review the current storyboard again")
     if not review.linter or not review.linter.get("passed"):
         raise HTTPException(409, "Linter has unresolved errors")
     project.prompt_approved_at = utcnow()

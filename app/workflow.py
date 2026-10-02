@@ -1,3 +1,4 @@
+from .production import production_context, settings as production_settings, validate_production, contract_errors, storyboard_contract_errors
 import json
 import hashlib
 import re
@@ -43,12 +44,14 @@ MAX_REVIEW_ROUNDS = max(2, min(5, int(os.getenv("MAX_REVIEW_ROUNDS", "3"))))
 def media_summary(media: list[Media]) -> list[dict[str, Any]]:
     return [{
         "id": m.id, "kind": m.kind, "name": m.filename, "role": m.role,
+        "alias": f"@{m.kind.title()}{sorted([x.id for x in media if x.kind == m.kind]).index(m.id)+1}",
         "duration_seconds": m.duration_seconds, "width": m.width, "height": m.height,
     } for m in media]
 
 
 def project_context(project: Project, media: list[Media]) -> str:
     return json.dumps({
+        "production": production_context(project, "common"),
         "creator_brief": project.brief,
         "creator_must_haves": project.must_haves,
         "task_type": project.task_type,
@@ -122,7 +125,10 @@ def _store_result(db, usage, result):
     db.commit()
 
 
-def record_call(db: Session, project: Project, phase: str, prompt: str, media: list[Media], *, review: Review | None = None, max_output: int = 2200, round_number: int = 0, json_retry: bool = True) -> Any:
+def record_call(db: Session, project: Project, phase: str, prompt: str, media: list[Media], *, review: Review | None = None, max_output: int = 2200, round_number: int = 0, json_retry: bool = True, production_included: bool = False) -> Any:
+    original_prompt = prompt
+    if not production_included and production_settings(project) and phase not in {"media_analysis", "critical_frame_check"}:
+        prompt += "\nPRODUCTION LIBRARY:\n" + json.dumps(production_context(project, phase), ensure_ascii=False)
     usage, max_output = _start_call(db, project, phase, prompt, media, review, max_output, round_number)
     try:
         result = call_model(phase, prompt, media, max_output_tokens=max_output)
@@ -140,12 +146,12 @@ def record_call(db: Session, project: Project, phase: str, prompt: str, media: l
         if not json_retry:
             raise ValueError(f"{phase} returned invalid JSON after one retry ({result.finish_reason})") from exc
         retry_limit = min(max_output * 2, 32768)
-        return record_call(db, project, phase, prompt + "\nReturn one complete compact JSON object only. Previous output was invalid or truncated.",
-                           media, review=review, max_output=retry_limit, round_number=round_number, json_retry=False)
+        return record_call(db, project, phase, original_prompt + "\nReturn one complete compact JSON object only. Previous output was invalid or truncated.",
+                           media, review=review, max_output=retry_limit, round_number=round_number, json_retry=False, production_included=production_included)
 
 
 def validate_settings(project: Project, media: list[Media]) -> list[str]:
-    errors = []
+    errors = validate_production(production_settings(project))
     if not project.brief.strip():
         errors.append("Creator brief is required")
     if project.resolution not in {"480p", "720p", "1080p"}:
@@ -193,10 +199,13 @@ def normalize_storyboard_references(storyboard: dict[str, Any]) -> dict[str, Any
 
 def validate_storyboard(project: Project, media: list[Media]) -> list[str]:
     storyboard = project.storyboard or {}
+    if production_settings(project) and (storyboard.get("_needs_replan") or storyboard.get("_production_version") != production_context(project,"common")["library_version"]):
+        return ["Generate a new storyboard for the current production profile and library before approval"]
     shots = storyboard.get("shots", [])
     if not isinstance(shots, list) or not 1 <= len(shots) <= 20:
         return ["Storyboard needs 1–20 shots"]
     errors = []
+    errors.extend(storyboard_contract_errors(project))
     media_ids = {m.id for m in media}
     shot_ids = [str(s.get("id", "")) for s in shots if isinstance(s, dict)]
     if len(shot_ids) != len(shots) or any(not value for value in shot_ids) or len(set(shot_ids)) != len(shot_ids):
@@ -251,6 +260,7 @@ def lint_prompt(project: Project, prompt: str, media: list[Media]) -> dict[str, 
         errors.append("Storyboard has not been approved")
     else:
         errors.extend(validate_storyboard(project, media))
+    errors.extend(contract_errors(project, prompt, media))
     return {"passed": not errors, "errors": errors, "heuristic_note": "A passing linter cannot guarantee the generated video."}
 
 
@@ -356,8 +366,10 @@ def generate_storyboard(db: Session, project: Project, media: list[Media]) -> di
     if project.duration_mode == "agent" and project.task_type in {"text_to_video", "reference_to_video"}:
         project.duration = duration
     storyboard = normalize_storyboard_references(storyboard)
-    storyboard.update({"intake": intake, "_evidence": evidence, "_pipeline_version": PIPELINE_VERSION})
+    storyboard.update({"_production_version": production_context(project,"common").get("library_version"), "intake": intake, "_evidence": evidence, "_pipeline_version": PIPELINE_VERSION})
     project.storyboard = storyboard
+    if production_settings(project):
+        storyboard["production_plan"] = {"library_version": production_context(project, "common")["library_version"], "profile": production_settings(project)["profile"], "creator_choices": production_settings(project)}
     errors = validate_storyboard(project, media)
     if errors:
         project.duration, project.storyboard = old_duration, old_storyboard
@@ -414,7 +426,8 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
         previous = state.get("revision_context", {})
         value = record_call(db, project, "prompt_draft", (
             "Write or repair an actionable Seedance 2.5 prompt from the approved storyboard. " + QUALITY_POLICY +
-            "Use explicit source bindings, shot timing, initial/action/final states and cinematic audio. "
+            "Use explicit source bindings, shot timing, initial/action/final states and project-specific audio. "
+            "For production profiles use the five exact headings specified in context, and @Image1/@Video1/@Audio1 aliases in media-ID order within each kind. Bind every uploaded source or explicitly state why it is unused. "
             "Do not repeat output resolution or aspect ratio in prose; those are API settings. "
             "Preserve reference authority. Return JSON {prompt:string}.\nCONTEXT:\n" + context +
             "\nPRIOR REVISION (if any):\n" + json.dumps(previous)
@@ -438,6 +451,8 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
                     "source cannot satisfy a required preserved event, not merely because a requested creative edit adds an event. "
                     "Preserve intentional rule breaks.\nCONTEXT:\n" + context + "\nPROMPT:\n" + state["prompt"])
                 inputs = media + frames + preview_media if phase in {"camera_visuals", "audio_dialogue"} else visual_media
+                if production_settings(project):
+                    prompt += "\nPRODUCTION LIBRARY:\n" + json.dumps(production_context(project, phase), ensure_ascii=False)
                 usage, limit = _start_call(db, project, phase, prompt, inputs, review, 16384, state["round"])
                 jobs.append((phase, prompt, inputs, usage, limit))
         except Exception:
@@ -464,7 +479,7 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
                         db.commit()
                         value = _findings(record_call(db, project, phase,
                             prompt + "\nReturn complete compact JSON with findings and verdict; previous output was invalid.",
-                            inputs, review=review, max_output=32768, round_number=state["round"], json_retry=False))
+                            inputs, review=review, max_output=32768, round_number=state["round"], json_retry=False, production_included=True))
                     findings[phase] = value
                     checkpoint(state["prompt"], state["round"], findings)
                 except Exception as exc:
@@ -485,7 +500,8 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
             "Return JSON {prompt:string,unresolved_critical:boolean,risks:[],decisions:[],creator_questions:[],"
             "repairs:[{finding_id,change}]}. Every repair must identify the finding and actual change. "
             "Return unchanged prompt if no supported repair is possible or necessary.\nCONTEXT:\n" + context +
-            "\nPROMPT:\n" + state["prompt"] + "\nFINDINGS:\n" + json.dumps(state["findings"])
+            "\nPROMPT:\n" + state["prompt"] + "\nFINDINGS:\n" + json.dumps(state["findings"]) +
+            "\nDETERMINISTIC REPAIRS REQUIRED:\n" + json.dumps(lint_prompt(project, state["prompt"], media)["errors"])
         ), visual_media, review=review, round_number=state["round"])
         if not isinstance(value, dict) or not isinstance(value.get("prompt"), str) or not value["prompt"].strip():
             raise ValueError("Supervisor returned invalid prompt")
@@ -565,6 +581,9 @@ def build_review_graph(db: Session, project: Project, media: list[Media], review
 
 def run_review(db: Session, project: Project, media: list[Media], review: Review) -> None:
     try:
+        if production_settings(project):
+            errors = validate_storyboard(project, media)
+            if errors: raise ValueError("; ".join(errors))
         signature = review_checkpoint_signature(db, project, media)
         initial: ReviewState = {}
         prior_revision = db.scalar(select(Review).where(
@@ -611,6 +630,7 @@ def run_review(db: Session, project: Project, media: list[Media], review: Review
         gate = state["gate"]
         review.findings = {
             **state.get("findings", {}),
+            "production_snapshot": production_context(project),
             "repair_history": state.get("history", []),
             "specialist_results": state.get("specialist_results", {}),
             "supervisor": supervisor,

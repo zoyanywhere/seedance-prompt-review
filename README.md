@@ -2,7 +2,7 @@
 
 An invitation-only web application for reviewing Seedance 2.5 prompts **before** an expensive video generation. The source repository is public; the deployed application and uploaded media are restricted to invited users.
 
-> Status: first working application version. BytePlus video generation remains outside this release. Server/domain deployment and the creator video concept will follow later.
+> Status: deployed at https://promptlab.zoyanywhere.com with invitation-only access. Film & Scene and Short & Ad share one project-scoped review workflow. BytePlus video generation remains outside this release.
 
 ![Target agent architecture and workflow](agent-architecture-en.svg)
 
@@ -10,7 +10,7 @@ The diagram shows the implemented quality-first workflow. See [the architecture 
 
 ## Workflow
 
-1. Creators provide intent, must-haves and optional image/video/audio references, plus resolution and aspect ratio. For new projects the director proposes a duration from 4–30 seconds; creators approve it with the storyboard. Existing fixed-duration projects retain their setting.
+1. Creators choose Film & Scene or Short & Ad, audio intention and optional library presets, then provide intent, must-haves and optional image/video/audio references, plus resolution and aspect ratio. For new projects the director proposes a duration from 4–30 seconds; creators approve it with the storyboard. Existing fixed-duration projects retain their setting.
 2. Technical validation checks inputs. Gemini 3.8 Flash (high) analyzes references before planning; Sol 6.1 (high) cross-checks sampled video frames. Source observations are cached by source identity/role and shared downstream.
 3. Luna structures the original brief. Claude Opus 5.5 (high) develops direction, hook/payoff, purposeful creative rule breaks, shot timing and acceptance criteria. Continuous shot windows must add up to the proposed duration.
 4. Creators edit and approve the storyboard and optional image previews. Sol 6.1 (high) drafts the prompt from the approved plan and source evidence.
@@ -95,3 +95,7 @@ Dependencies and base images receive weekly Dependabot update PRs. CI checks bui
 Dependabot PRs can auto-merge after both required CI jobs (`test` and `container`) pass for the current PR head. Branch protection must require those checks; the auto-merge workflow does not check out or execute PR code with write permissions.
 
 The interface follows Zoya Anywhere's current director identity: near-black surfaces, Instrument Serif headings, JetBrains Mono labels, orange actions and fine grid borders, with responsive creator forms.
+
+## Film & Scene / Short & Ad
+
+Choose a production profile, purpose, audio intention, transformations, visual style and camera movement before the brief. Six Master libraries provide project-scoped reference material to the agents. New profiled projects produce a validated five-block prompt. Existing projects can opt in through settings. See [the production guide](docs/PRODUCTION-PROFILES.md).
